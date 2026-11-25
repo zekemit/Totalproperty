@@ -2,7 +2,7 @@
  * Single source of truth for company facts, navigation and positioning.
  *
  * RULE: only facts verified from the company's own live site (audit §2.1) are
- * hard-coded. Anything unverified — licences, leadership, founding year — is an
+ * hard-coded. Anything unverified — licenses, leadership, founding year — is an
  * optional field that is empty by default; pages render those sections only
  * when they are populated. Fill them in once the client confirms the facts.
  */
@@ -13,7 +13,7 @@ export type License = {
   jurisdiction: string;
   number: string;
   holder?: string;
-  /** Public regulator lookup page for this licence. */
+  /** Public regulator lookup page for this license. */
   verifyUrl?: string;
 };
 

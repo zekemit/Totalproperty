@@ -57,8 +57,24 @@ function success(kind: FormKind, emergency = false): FormState {
   return { status: "success", message: MESSAGES[kind] + (emergency ? EMERGENCY_NOTE : "") };
 }
 
-function failure(message: string, fieldErrors?: FormState["fieldErrors"]): FormState {
-  return { status: "error", message, ...(fieldErrors ? { fieldErrors } : {}) };
+/** Fields that are never echoed back to the browser. */
+const NOT_ECHOED = new Set([HONEYPOT_FIELD, "fillMs", "sourcePath", "cf-turnstile-response", "startedAt"]);
+
+function echoValues(raw: Record<string, string>): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const [key, value] of Object.entries(raw)) {
+    if (!NOT_ECHOED.has(key) && !key.startsWith("utm_")) out[key] = value.slice(0, 2000);
+  }
+  return out;
+}
+
+function failure(message: string, raw?: Record<string, string>, fieldErrors?: FormState["fieldErrors"]): FormState {
+  return {
+    status: "error",
+    message,
+    ...(fieldErrors ? { fieldErrors } : {}),
+    ...(raw ? { values: echoValues(raw) } : {}),
+  };
 }
 
 function toRecord(form: FormData): Record<string, string> {
@@ -258,18 +274,21 @@ export async function processSubmission(
 
   const limit = deps.limiter.check(ctx.ip);
   if (!limit.ok) {
-    return failure(`Too many requests from your connection. Please wait a few minutes and try again, or call us at ${siteConfig.phone}.`);
+    return failure(
+      `Too many requests from your connection. Please wait a few minutes and try again, or call us at ${siteConfig.phone}.`,
+      raw,
+    );
   }
 
   if (deps.turnstileSecret) {
     const secret = deps.turnstileSecret;
     const verify = deps.verifyHuman ?? ((token: string, ip: string) => verifyTurnstile(token, secret, ip));
     const human = await verify(raw["cf-turnstile-response"] ?? "", ctx.ip);
-    if (!human) return failure("We couldn't verify that you're human. Please try again.");
+    if (!human) return failure("We couldn't verify that you're human. Please try again.", raw);
   }
 
   const parsed = prepare(kind, raw);
-  if (!parsed.ok) return failure("Please fix the highlighted fields and try again.", parsed.errors);
+  if (!parsed.ok) return failure("Please fix the highlighted fields and try again.", raw, parsed.errors);
   const p = parsed.prepared;
 
   const lead: LeadInsert = {
@@ -328,5 +347,5 @@ export async function processSubmission(
   }
 
   console.error("[lead] submission could not be delivered", { kind, configured: { store: !!deps.store, mailer: !!deps.mailer } });
-  return failure(`We couldn't send your request right now. ${CONTACT_FALLBACK}`);
+  return failure(`We couldn't send your request right now. ${CONTACT_FALLBACK}`, raw);
 }

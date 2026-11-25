@@ -194,6 +194,27 @@ describe("validation", () => {
   });
 });
 
+describe("echoing values on error", () => {
+  it("returns what the user typed so the form isn't wiped, minus internal and token fields", async () => {
+    const { deps } = makeDeps();
+    const res = await processSubmission(
+      deps,
+      "rental_analysis",
+      form({ ...rental, email: "nope", "cf-turnstile-response": "tok", reference_code: "", utm_source: "ad" }),
+      ctx,
+    );
+    expect(res.values).toMatchObject({ name: "Jane Owner", email: "nope", street: "123 Main St", state: "VA" });
+    expect(res.values).not.toHaveProperty("cf-turnstile-response");
+    expect(res.values).not.toHaveProperty("fillMs");
+    expect(res.values).not.toHaveProperty("sourcePath");
+    expect(res.values).not.toHaveProperty("utm_source");
+  });
+  it("does not echo anything on success", async () => {
+    const { deps } = makeDeps();
+    expect((await processSubmission(deps, "rental_analysis", form(rental), ctx)).values).toBeUndefined();
+  });
+});
+
 describe("[review focus 4] partial infrastructure", () => {
   it("succeeds when the store works but email fails, logging no PII", async () => {
     const err = vi.spyOn(console, "error").mockImplementation(() => {});

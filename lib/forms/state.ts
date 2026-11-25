@@ -3,6 +3,11 @@ export type FormState = {
   status: "idle" | "success" | "error";
   message?: string;
   fieldErrors?: Record<string, string[] | undefined>;
+  /**
+   * Non-sensitive submitted values echoed back on error. React 19 resets uncontrolled
+   * forms after every action, so without this a validation error would wipe the form.
+   */
+  values?: Record<string, string>;
 };
 
 export const initialFormState: FormState = { status: "idle" };
