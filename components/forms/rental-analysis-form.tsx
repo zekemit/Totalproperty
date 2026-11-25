@@ -25,7 +25,7 @@ export function RentalAnalysisForm({ suggestedRent, rentKey = 0 }: { suggestedRe
           <PersonFields h={h} phoneHint="Optional. Add it if you'd rather talk it through." />
 
           <fieldset className="flex flex-col gap-6">
-            <legend className="mb-1 text-lg font-extrabold text-navy-800">The property</legend>
+            <legend className="mb-5 font-display text-3xl text-ink-900">The property</legend>
             <TextField h={h} name="street" label="Street address" autoComplete="address-line1" maxLength={120} />
             <div className="grid gap-6 sm:grid-cols-6">
               <TextField h={h} name="city" label="City" autoComplete="address-level2" maxLength={80} className="sm:col-span-3" />

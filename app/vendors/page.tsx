@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { VendorForm } from "@/components/forms/vendor-form";
-import { PageHero, Section, SectionHeading } from "@/components/site/sections";
+import { Band, PageHero, SectionTitle } from "@/components/site/sections";
 import { siteConfig } from "@/lib/site";
 
 export const metadata: Metadata = {
@@ -14,35 +14,37 @@ const work = ["Maintenance", "Renovation", "Repair", "Landscaping", "Snow remova
 export default function VendorsPage() {
   return (
     <>
-      <PageHero
+      <PageHero art="skyline"
         kicker="For vendors and contractors"
-        title="Do good work for properties we manage."
+        title="Do good work|for properties|we manage."
         lede="We coordinate maintenance, renovation, repair, landscaping and construction across the properties we manage. If that's your trade, tell us about your business."
       />
 
-      <Section labelledBy="work-h">
-        <div className="grid gap-10 lg:grid-cols-12">
-          <div className="lg:col-span-4">
-            <h2 id="work-h" className="text-2xl">Work we coordinate</h2>
-            <ul className="mt-4 space-y-2">
+      <Band tone="travertine" labelledBy="work-h">
+        <div className="grid gap-14 lg:grid-cols-12">
+          <div className="lg:col-span-5">
+            <h2 id="work-h" className="font-sans text-base font-semibold text-brass-700">Work we coordinate</h2>
+            <ul className="mt-6 border-b border-[var(--hairline)]">
               {work.map((w) => (
-                <li key={w} className="border-b border-line pb-2 font-bold text-navy-800">{w}</li>
+                <li key={w} className="border-t border-[var(--hairline)] py-3 font-display text-4xl leading-none sm:text-5xl">{w}</li>
               ))}
             </ul>
-            <p className="mt-6">
+            <p className="mt-8 max-w-sm text-muted">
               Already working with us and have a question about a job? Contact us at{" "}
-              <a href={`mailto:${siteConfig.email}`} className="font-bold text-navy-700 underline">{siteConfig.email}</a> or{" "}
-              <a href={siteConfig.phoneHref} className="font-bold text-navy-700 underline">{siteConfig.phone}</a>.
+              <a href={`mailto:${siteConfig.email}`} className="link-line font-semibold text-text">{siteConfig.email}</a> or{" "}
+              <a href={siteConfig.phoneHref} className="link-line font-semibold text-text">{siteConfig.phone}</a>.
             </p>
           </div>
-          <div className="lg:col-span-8">
-            <SectionHeading title="Tell us about your business" lede="Share your trade and where you work. We'll follow up with onboarding requirements." className="!mb-6" />
-            <div className="rounded-xl border border-line bg-white p-6 shadow-card sm:p-8">
+          <div className="lg:col-span-7">
+            <SectionTitle className="mb-10" lede="Share your trade and where you work. We'll follow up with onboarding requirements.">
+              Tell us about your business
+            </SectionTitle>
+            <div className="sheet p-6 sm:p-10">
               <VendorForm />
             </div>
           </div>
         </div>
-      </Section>
+      </Band>
     </>
   );
 }

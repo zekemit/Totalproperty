@@ -20,6 +20,9 @@ for (const route of routes) {
     });
 
     test("passes axe (WCAG 2.0/2.1/2.2 A and AA)", async ({ page }) => {
+      // Measure the settled state: with motion enabled, axe can sample text mid-fade at partial
+      // opacity. This also exercises the prefers-reduced-motion path.
+      await page.emulateMedia({ reducedMotion: "reduce" });
       await page.goto(route, { waitUntil: "networkidle" });
       const results = await new AxeBuilder({ page })
         .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"])

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { PageHero, Section } from "@/components/site/sections";
+import { Band, PageHero } from "@/components/site/sections";
 import { siteConfig } from "@/lib/site";
 
 export const metadata: Metadata = {
@@ -11,9 +11,9 @@ export const metadata: Metadata = {
 export default function AccessibilityPage() {
   return (
     <>
-      <PageHero title="Accessibility statement" lede="Everyone should be able to use this website." />
-      <Section>
-        <div className="prose-block max-w-3xl">
+      <PageHero title="Accessibility|statement" lede="Everyone should be able to use this website." />
+      <Band tone="travertine">
+        <div className="prose-block ">
           <p>
             We design and test this website to meet the Web Content Accessibility Guidelines (WCAG) 2.2, Level AA. That includes keyboard navigation, visible focus indicators, text and controls with sufficient color contrast, labelled form fields with clear error messages, and support for screen readers and for reduced motion.
           </p>
@@ -25,7 +25,7 @@ export default function AccessibilityPage() {
           <h2>Other ways to reach us</h2>
           <p>Everything you can do on this website you can also do by phone, email or mail.</p>
         </div>
-      </Section>
+      </Band>
     </>
   );
 }

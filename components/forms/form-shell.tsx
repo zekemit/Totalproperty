@@ -84,11 +84,11 @@ export function FormShell({ action, submitLabel, pendingLabel = "Sending…", su
         ref={successRef}
         tabIndex={-1}
         role="status"
-        className="rounded-xl border-2 border-success bg-white p-6 outline-offset-4 sm:p-8"
+        className="border-l-4 border-success bg-paper p-6 outline-offset-4 sm:p-8"
       >
-        <CheckCircle2 aria-hidden="true" className="mb-3 size-9 text-success" />
-        <h3 className="text-2xl">{successTitle}</h3>
-        <p className="mt-2 text-lg">{state.message}</p>
+        <CheckCircle2 aria-hidden="true" className="mb-3 size-8 text-success" />
+        <h3 className="text-4xl">{successTitle}</h3>
+        <p className="mt-3 text-lg">{state.message}</p>
       </div>
     );
   }
@@ -102,14 +102,14 @@ export function FormShell({ action, submitLabel, pendingLabel = "Sending…", su
           ref={summaryRef}
           tabIndex={-1}
           role="alert"
-          className="rounded-lg border-2 border-danger bg-white p-4 outline-offset-4"
+          className="border-l-4 border-danger bg-paper p-4 outline-offset-4"
         >
-          <p className="font-bold text-danger">{state.message}</p>
+          <p className="font-semibold text-danger">{state.message}</p>
           {fieldErrorEntries.length > 0 ? (
             <ul className="mt-2 list-disc space-y-1 pl-5">
               {fieldErrorEntries.map(([name, messages]) => (
                 <li key={name}>
-                  <a href={`#${helpers.id(name)}`} className="font-bold text-navy-700 underline">
+                  <a href={`#${helpers.id(name)}`} className="font-semibold underline">
                     {fieldLabels[name] ?? name}
                   </a>
                   : {messages?.[0]}
@@ -129,7 +129,7 @@ export function FormShell({ action, submitLabel, pendingLabel = "Sending…", su
       </div>
 
       <noscript>
-        <p className="rounded-lg border-2 border-navy-800 bg-white p-4 font-bold text-navy-800">
+        <p className="border-l-4 border-ink-900 bg-paper p-4 font-semibold text-ink-900">
           This form needs JavaScript. To reach us without it, call {siteConfig.phone} or email {siteConfig.email}.
         </p>
       </noscript>

@@ -1,15 +1,14 @@
 import type { Metadata } from "next";
-import { ExternalLink, Phone } from "lucide-react";
+import { ExternalLink } from "lucide-react";
 import { MaintenanceForm } from "@/components/forms/maintenance-form";
 import { Button } from "@/components/ui/button";
-import { PageHero, Section, SectionHeading } from "@/components/site/sections";
+import { Band, display, EditorialRow, IndexRows, PageHero, SectionTitle } from "@/components/site/sections";
 import { portalUrls } from "@/lib/portals";
 import { siteConfig } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "Tenants: pay rent, request maintenance, portal access",
-  description:
-    "Tenant hub for Total Property Management: pay rent, report a maintenance problem, and find the tenant portal.",
+  description: "Tenant hub for Total Property Management: pay rent, report a maintenance problem, and find the tenant portal.",
   alternates: { canonical: "/tenants" },
 };
 
@@ -19,7 +18,16 @@ const steps = [
   { title: "We follow up.", text: "Our team reviews your request and contacts you about next steps." },
 ] as const;
 
-function ExternalButton({ href, children, variant = "primary" }: { href: string; children: React.ReactNode; variant?: "primary" | "outline" }) {
+function Door({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <li className="grid gap-x-10 gap-y-5 border-t border-[var(--hairline)] py-10 lg:grid-cols-12 lg:items-center">
+      <h3 className={`${display.section} lg:col-span-6`}>{title}</h3>
+      <div className="lg:col-span-5 lg:col-start-8">{children}</div>
+    </li>
+  );
+}
+
+function External({ href, children, variant = "primary" }: { href: string; children: React.ReactNode; variant?: "primary" | "outline" }) {
   return (
     <Button asChild size="lg" variant={variant}>
       <a href={href} target="_blank" rel="noopener noreferrer">
@@ -33,64 +41,66 @@ function ExternalButton({ href, children, variant = "primary" }: { href: string;
 
 export default function TenantsPage() {
   const { tenant, payment } = portalUrls();
+  const call = (
+    <a href={siteConfig.phoneHref} className="link-line font-semibold">
+      {siteConfig.phone}
+    </a>
+  );
 
   return (
     <>
-      <PageHero kicker="For tenants" title="Pay rent. Report a repair. Get an answer." lede="Everything you need as a Total Property tenant, in one place." />
+      <PageHero art="tenants" kicker="For tenants" title="Pay rent.|Report a repair.|Get an answer." lede="Everything you need as a Total Property tenant, in one place." />
 
-      <Section labelledBy="portal-h">
-        <SectionHeading id="portal-h" title="Portal and rent" />
-        <div className="grid gap-6 md:grid-cols-2">
-          <div className="rounded-xl border border-line bg-white p-6">
-            <h3 className="text-xl">Tenant portal</h3>
+      <Band labelledBy="doors-h">
+        <h2 id="doors-h" className="sr-only">Portal, rent and repairs</h2>
+        <ul className="border-b border-[var(--hairline)]">
+          <Door title="Tenant portal">
             {tenant ? (
               <>
-                <p className="mb-5 mt-2">Sign in to see your account and documents.</p>
-                <ExternalButton href={tenant}>Open tenant portal</ExternalButton>
+                <p className="mb-5 text-lg">Sign in to see your account and documents.</p>
+                <External href={tenant}>Open tenant portal</External>
               </>
             ) : (
-              <p className="mt-2">To get set up with your tenant portal, call <a href={siteConfig.phoneHref} className="font-bold text-navy-700 underline">{siteConfig.phone}</a> or email <a href={`mailto:${siteConfig.email}`} className="font-bold text-navy-700 underline">{siteConfig.email}</a> and we&apos;ll help you directly.</p>
+              <p className="text-lg">To get set up with your tenant portal, call {call} or email <a href={`mailto:${siteConfig.email}`} className="link-line font-semibold">{siteConfig.email}</a> and we&rsquo;ll help you directly.</p>
             )}
-          </div>
-          <div className="rounded-xl border border-line bg-white p-6">
-            <h3 className="text-xl">Pay rent</h3>
+          </Door>
+          <Door title="Pay rent">
             {payment ? (
               <>
-                <p className="mb-5 mt-2">Pay securely through our payment partner.</p>
-                <ExternalButton href={payment} variant="outline">Pay rent online</ExternalButton>
+                <p className="mb-5 text-lg">Pay securely through our payment partner.</p>
+                <External href={payment} variant="outline">Pay rent online</External>
               </>
             ) : (
-              <p className="mt-2">To pay rent, call <a href={siteConfig.phoneHref} className="font-bold text-navy-700 underline">{siteConfig.phone}</a> for current payment instructions.</p>
+              <p className="text-lg">To pay rent, call {call} for current payment instructions.</p>
             )}
-          </div>
-        </div>
-      </Section>
+          </Door>
+          <Door title="Report a repair">
+            <p className="mb-5 text-lg">Tell us what&rsquo;s wrong and we&rsquo;ll follow up.</p>
+            <Button asChild size="lg"><a href="#maintenance">Send a maintenance request</a></Button>
+          </Door>
+        </ul>
+      </Band>
 
-      <Section id="maintenance" tone="panel" labelledBy="maintenance-h" className="scroll-mt-4">
-        <SectionHeading id="maintenance-h" title="Report a maintenance problem" />
-        <ol className="mb-12 grid gap-6 md:grid-cols-3">
-          {steps.map((s, i) => (
-            <li key={s.title} className="rounded-xl border border-line bg-white p-6">
-              <span aria-hidden="true" className="flex size-10 items-center justify-center rounded-full bg-navy-800 text-lg font-extrabold text-white">{i + 1}</span>
-              <h3 className="mt-4 text-xl">{s.title}</h3>
-              <p className="mt-2">{s.text}</p>
-            </li>
-          ))}
-        </ol>
+      <Band tone="ink" labelledBy="steps-h">
+        <EditorialRow label={<h2 id="steps-h" className="font-sans text-base font-semibold text-brass-300">When something breaks</h2>}>
+          <IndexRows numbered items={steps.map((s) => ({ title: s.title, text: s.text }))} />
+        </EditorialRow>
+      </Band>
 
-        <div className="grid gap-10 lg:grid-cols-12">
+      <Band id="maintenance" tone="travertine" labelledBy="request-h" className="scroll-mt-16">
+        <div className="grid gap-12 lg:grid-cols-12">
           <div className="lg:col-span-4">
-            <h3 className="text-2xl">Maintenance request</h3>
-            <a href={siteConfig.emergencyPhoneHref} className="mt-4 inline-flex min-h-11 items-center gap-2 font-bold text-navy-700 underline underline-offset-4">
-              <Phone aria-hidden="true" className="size-5" />
-              Emergency? Call {siteConfig.emergencyPhone}
+            <SectionTitle id="request-h">Maintenance request</SectionTitle>
+            <p className="mt-8 text-muted">Emergency? Don&rsquo;t wait for a form.</p>
+            <a href={siteConfig.emergencyPhoneHref} className="link-line mt-2 inline-block font-display text-5xl leading-none">
+              {siteConfig.emergencyPhone}
             </a>
           </div>
-          <div className="rounded-xl border border-line bg-white p-6 shadow-card sm:p-8 lg:col-span-8">
+          <div className="sheet p-6 sm:p-10 lg:col-span-8">
             <MaintenanceForm />
           </div>
         </div>
-      </Section>
+      </Band>
     </>
   );
 }

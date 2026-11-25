@@ -1,70 +1,71 @@
 @import "tailwindcss";
 
 /*
- * Design tokens — Total Property Management
- * Every text/background pair below was contrast-checked against WCAG 2.2 AA
- * (see README → "Design tokens & contrast"). Do not introduce new text colours
- * without re-running the check.
+ * Total Property: design system.
+ * Concept: one foundation under four buildings. Architectural drawing meets engraved
+ * brass: limestone paper, charcoal-navy ink, brass hairlines.
+ *
+ * Every text/background pair was contrast-checked against WCAG 2.2 AA (see
+ * DESIGN_OVERHAUL_NOTES.md). Brass text on limestone/travertine MUST use brass-700;
+ * #8F5F00 (brass-600) only passes on the lightest paper or at large display sizes.
  */
 @theme {
-  /* Surfaces */
-  --color-alabaster: #f7f6f1;
-  --color-alabaster-2: #efede5;
-  --color-white: #ffffff;
-  --color-line: #d9d6cb;
+  /* Stone */
+  --color-paper: #f4f0e7;
+  --color-limestone: #ece6da;
+  --color-travertine: #dfd6c4;
+  --color-sand: #c9bea6;
 
-  /* Harbor Navy — headings, primary actions, dark sections */
-  --color-navy-900: #0b1a2e;
-  --color-navy-800: #12263f;
-  --color-navy-700: #1d3a5f;
-  --color-navy-600: #2a4d7a;
+  /* Architectural charcoal-navy */
+  --color-ink-950: #0b111a;
+  --color-ink-900: #101927;
+  --color-ink-800: #182437;
+  --color-ink-700: #243449;
 
-  /* Neutral text */
-  --color-ink: #23272e;
-  --color-muted: #4f5762;
-  --color-muted-on-dark: #b7c2d0;
-  --color-field-border: #6f757d;
+  /* Text on stone */
+  --color-text: #151b25;
+  --color-muted: #4d5560;
 
-  /* Accent — accessible copper-amber (5.10:1 on alabaster) and gold for fills on navy */
-  --color-copper: #8f5f00;
-  --color-gold: #e2b35a;
-  --color-gold-hover: #ecc277;
+  /* Brass */
+  --color-brass-700: #7a5200;
+  --color-brass-600: #8f5f00;
+  --color-brass-500: #b08334;
+  --color-brass-400: #c99a45;
+  --color-brass-300: #ddb56a;
+  --color-brass-200: #ebd3a0;
 
-  /* Status */
+  --color-field: #7b7568;
   --color-danger: #a3281f;
   --color-success: #1f6b3f;
 
-  /* Type */
-  --font-sans: var(--font-manrope), ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  --font-serif: var(--font-source-serif), ui-serif, Georgia, "Times New Roman", serif;
+  --font-sans: var(--font-instrument-sans), ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-display: var(--font-instrument-serif), "Times New Roman", Georgia, serif;
+  --font-display-italic: var(--font-instrument-serif-italic), "Times New Roman", Georgia, serif;
 
-  --radius-card: 0.75rem;
-  --shadow-card: 0 1px 2px rgb(11 26 46 / 0.06), 0 8px 24px -12px rgb(11 26 46 / 0.18);
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+:root {
+  --hairline: rgb(21 27 37 / 0.26);
+  --grid: rgb(21 27 37 / 0.07);
 }
 
 @layer base {
   html {
-    scroll-behavior: smooth;
     -webkit-text-size-adjust: 100%;
+    scroll-padding-top: 5.5rem;
   }
-  @media (prefers-reduced-motion: reduce) {
-    html {
-      scroll-behavior: auto;
-    }
-    *,
-    *::before,
-    *::after {
-      animation-duration: 0.01ms !important;
-      animation-iteration-count: 1 !important;
-      transition-duration: 0.01ms !important;
-    }
+  /* Lock page scroll behind the open menu drawer. */
+  html:has(dialog[open]) {
+    overflow: hidden;
   }
   body {
-    background-color: var(--color-alabaster);
-    color: var(--color-ink);
+    background-color: var(--color-limestone);
+    color: var(--color-text);
     font-family: var(--font-sans);
     font-size: 1.0625rem;
-    line-height: 1.65;
+    line-height: 1.62;
+    font-optical-sizing: auto;
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
   }
@@ -72,77 +73,378 @@
   h2,
   h3,
   h4 {
-    color: var(--color-navy-800);
-    font-weight: 800;
-    letter-spacing: -0.015em;
-    line-height: 1.12;
+    font-family: var(--font-display);
+    font-weight: 400;
+    letter-spacing: -0.02em;
+    line-height: 1;
     text-wrap: balance;
-  }
-  h1 {
-    font-size: clamp(2.25rem, 1.6rem + 3vw, 3.75rem);
-  }
-  h2 {
-    font-size: clamp(1.75rem, 1.35rem + 1.6vw, 2.5rem);
-  }
-  h3 {
-    font-size: 1.25rem;
-    line-height: 1.25;
+    font-synthesis: none;
   }
   p {
     text-wrap: pretty;
   }
   a {
-    text-underline-offset: 0.18em;
-  }
-  /* One consistent, high-contrast focus indicator (WCAG 2.4.7 / 2.4.11). */
-  :focus-visible {
-    outline: 3px solid var(--color-navy-700);
-    outline-offset: 3px;
-    border-radius: 2px;
-  }
-  .on-dark :focus-visible {
-    outline-color: var(--color-gold);
+    text-underline-offset: 0.2em;
   }
   ::selection {
-    background: var(--color-gold);
-    color: var(--color-navy-900);
+    background: var(--color-brass-300);
+    color: var(--color-ink-950);
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-ink-900);
+    outline-offset: 3px;
+  }
+  .on-dark {
+    --hairline: rgb(236 230 218 / 0.22);
+    --grid: rgb(236 230 218 / 0.06);
+    color: var(--color-limestone);
+  }
+  .on-dark :focus-visible {
+    outline-color: var(--color-brass-300);
   }
 }
 
 @layer components {
-  /* Reusable width container with a 16px minimum gutter on phones. */
+  /* Page measure: a wide editorial container with generous gutters. */
   .container-page {
     margin-inline: auto;
     width: 100%;
-    max-width: 72rem;
-    padding-inline: clamp(1rem, 4vw, 2rem);
+    max-width: 84rem;
+    padding-inline: clamp(1.25rem, 4vw, 3rem);
   }
-  /* A short, sentence-case label that names who a section is for. Used sparingly. */
-  .kicker {
-    color: var(--color-copper);
-    font-size: 0.9375rem;
-    font-weight: 700;
+
+  /* Surfaces */
+  /*
+   * Paper grain: a few coprime speckle layers drawn with CSS gradients, on a pseudo-element.
+   * It deliberately avoids url() images (including data: SVG noise): Chrome attributes a
+   * background image to its element and treats a full-width one as the largest contentful
+   * paint, and rasterising an SVG noise filter delayed that measurement by over a second.
+   * Gradients are not LCP candidates.
+   */
+  .grain {
+    position: relative;
+    /* Light falling across the stone: a soft wash from the upper left (a gradient, not an image). */
+    background-image: radial-gradient(70% 55% at 12% 0%, rgb(255 253 247 / 0.2), transparent 70%);
   }
-  .on-dark .kicker {
-    color: var(--color-gold);
+  .grain::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    /* Sparse flecks and pits, one per tile, on coprime tile sizes so nothing visibly repeats. */
+    background-image:
+      radial-gradient(circle at 23% 41%, rgb(70 58 36 / 0.2) 0 0.7px, transparent 1.1px),
+      radial-gradient(circle at 68% 22%, rgb(70 58 36 / 0.16) 0 0.6px, transparent 1px),
+      radial-gradient(circle at 41% 77%, rgb(70 58 36 / 0.14) 0 0.9px, transparent 1.3px),
+      radial-gradient(circle at 84% 63%, rgb(70 58 36 / 0.18) 0 0.6px, transparent 1px),
+      radial-gradient(circle at 12% 88%, rgb(255 253 247 / 0.5) 0 0.8px, transparent 1.2px),
+      radial-gradient(circle at 57% 9%, rgb(255 253 247 / 0.4) 0 0.7px, transparent 1.1px);
+    background-size: 37px 29px, 53px 47px, 71px 61px, 97px 83px, 43px 59px, 79px 67px;
+    mix-blend-mode: multiply;
   }
+  .drawing-grid {
+    position: relative;
+  }
+  .drawing-grid::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background-image: linear-gradient(to right, var(--grid) 1px, transparent 1px);
+    background-size: 25% 100%;
+  }
+  @media (min-width: 64rem) {
+    .drawing-grid::before {
+      background-size: calc(100% / 12) 100%;
+    }
+  }
+
+  .hairline-t {
+    border-top: 1px solid var(--hairline);
+  }
+  .hairline-b {
+    border-bottom: 1px solid var(--hairline);
+  }
+
+  /* Dimension rule: a hairline with end ticks and an optional centered label. */
+  .dim {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    color: inherit;
+  }
+  .dim::before,
+  .dim::after {
+    content: "";
+    height: 0.6rem;
+    border-left: 1px solid var(--hairline);
+  }
+  .dim > i {
+    flex: 1;
+    height: 1px;
+    background: var(--hairline);
+  }
+
+  /* Paper sheet with corner crop marks (replaces the generic rounded card). */
+  .sheet {
+    position: relative;
+    background-color: #fbf9f4;
+    border: 1px solid var(--hairline);
+    background-image:
+      linear-gradient(var(--color-brass-500), var(--color-brass-500)), linear-gradient(var(--color-brass-500), var(--color-brass-500)),
+      linear-gradient(var(--color-brass-500), var(--color-brass-500)), linear-gradient(var(--color-brass-500), var(--color-brass-500)),
+      linear-gradient(var(--color-brass-500), var(--color-brass-500)), linear-gradient(var(--color-brass-500), var(--color-brass-500)),
+      linear-gradient(var(--color-brass-500), var(--color-brass-500)), linear-gradient(var(--color-brass-500), var(--color-brass-500));
+    background-repeat: no-repeat;
+    background-size:
+      16px 1px, 1px 16px, 16px 1px, 1px 16px,
+      16px 1px, 1px 16px, 16px 1px, 1px 16px;
+    background-position:
+      left 10px top 10px, left 10px top 10px,
+      right 10px top 10px, right 10px top 10px,
+      left 10px bottom 10px, left 10px bottom 10px,
+      right 10px bottom 10px, right 10px bottom 10px;
+  }
+
+  /* Underline that grows on hover: the site's link voice. */
+  .link-line {
+    background-image: linear-gradient(currentColor, currentColor);
+    background-repeat: no-repeat;
+    background-position: 0 100%;
+    background-size: 100% 1px;
+    transition: background-size 0.35s var(--ease-out);
+    padding-bottom: 0.1em;
+  }
+  .link-line:hover {
+    background-size: 100% 3px;
+  }
+
   .prose-block > * + * {
-    margin-top: 1rem;
+    margin-top: 1.1rem;
+  }
+  .prose-block {
+    max-width: 44rem;
   }
   .prose-block ul {
-    list-style: disc;
-    padding-left: 1.25rem;
+    list-style: none;
+    padding: 0;
+  }
+  .prose-block ul > li {
+    position: relative;
+    padding-left: 1.5rem;
+  }
+  .prose-block ul > li::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0.85em;
+    width: 0.8rem;
+    height: 1px;
+    background: var(--color-brass-600);
   }
   .prose-block ul > li + li {
-    margin-top: 0.4rem;
+    margin-top: 0.5rem;
   }
   .prose-block a {
-    color: var(--color-navy-700);
-    font-weight: 700;
+    font-weight: 600;
     text-decoration: underline;
+    text-decoration-thickness: 1px;
   }
   .prose-block h2 {
-    margin-top: 2.25rem;
-    font-size: 1.5rem;
+    margin-top: 3rem;
+    font-size: clamp(1.75rem, 1.4rem + 1.2vw, 2.5rem);
   }
+
+  /* Custom range slider (vacancy instrument). */
+  .range {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 2.75rem;
+    background: transparent;
+    cursor: pointer;
+  }
+  .range::-webkit-slider-runnable-track {
+    height: 2px;
+    background: var(--color-brass-400);
+  }
+  .range::-moz-range-track {
+    height: 2px;
+    background: var(--color-brass-400);
+  }
+  .range::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 1.75rem;
+    height: 1.75rem;
+    margin-top: calc(-0.875rem + 1px);
+    border-radius: 9999px;
+    background: var(--color-brass-300);
+    border: 6px solid var(--color-ink-900);
+    box-shadow: 0 0 0 1px var(--color-brass-300);
+    transition: transform 0.2s var(--ease-out);
+  }
+  .range::-moz-range-thumb {
+    width: 1.75rem;
+    height: 1.75rem;
+    box-sizing: border-box;
+    border-radius: 9999px;
+    background: var(--color-brass-300);
+    border: 6px solid var(--color-ink-900);
+    box-shadow: 0 0 0 1px var(--color-brass-300);
+  }
+  .range:hover::-webkit-slider-thumb {
+    transform: scale(1.12);
+  }
+  .range:focus-visible {
+    outline: none;
+  }
+  .range:focus-visible::-webkit-slider-thumb {
+    box-shadow: 0 0 0 1px var(--color-brass-300), 0 0 0 4px var(--color-ink-900), 0 0 0 6px var(--color-brass-300);
+  }
+  .range:focus-visible::-moz-range-thumb {
+    box-shadow: 0 0 0 1px var(--color-brass-300), 0 0 0 4px var(--color-ink-900), 0 0 0 6px var(--color-brass-300);
+  }
+
+  /* Hatching for vacant time. */
+  .hatch {
+    background-color: var(--color-ink-800);
+    background-image: repeating-linear-gradient(135deg, var(--color-brass-400) 0 2px, transparent 2px 8px);
+  }
+
+  /* Building drawings: stroke-only, fill revealed when active. */
+  .bldg {
+    color: var(--color-sand);
+    transition: color 0.35s var(--ease-out);
+  }
+  .bldg .vol {
+    fill: var(--color-brass-400);
+    fill-opacity: 0;
+    transition: fill-opacity 0.35s var(--ease-out);
+  }
+  .bldg[data-active="true"] {
+    color: var(--color-brass-300);
+  }
+  .bldg[data-active="true"] .vol {
+    fill-opacity: 0.16;
+  }
+
+  /* Lobby directory rows: a brass rule extends on hover/focus. */
+  .dir-row {
+    position: relative;
+    isolation: isolate;
+  }
+  .dir-row::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    bottom: -1px;
+    height: 1px;
+    width: 100%;
+    background: var(--color-brass-300);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.5s var(--ease-out);
+  }
+  .dir-row:hover::after,
+  .dir-row:focus-visible::after {
+    transform: scaleX(1);
+  }
+}
+
+/* Motion: one orchestrated hero moment plus responses to touch. Reduced motion shows the final state. */
+@media (prefers-reduced-motion: no-preference) {
+  .rise-line {
+    display: block;
+    overflow: hidden;
+    padding-bottom: 0.14em;
+    margin-bottom: -0.14em;
+  }
+  .rise-line > span {
+    display: block;
+    animation: rise 0.9s var(--ease-out) both;
+    animation-delay: calc(var(--i, 0) * 95ms + 60ms);
+  }
+  @keyframes rise {
+    from {
+      transform: translateY(108%);
+    }
+    to {
+      transform: none;
+    }
+  }
+  .fade-in {
+    animation: fade-in 0.9s var(--ease-out) both;
+    animation-delay: calc(var(--i, 0) * 95ms + 300ms);
+  }
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+      transform: translateY(14px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  .draw * {
+    stroke-dasharray: 1;
+    stroke-dashoffset: 1;
+    animation: draw 1.8s var(--ease-out) forwards;
+    animation-delay: calc(var(--d, 0) * 1ms + 450ms);
+  }
+  @keyframes draw {
+    to {
+      stroke-dashoffset: 0;
+    }
+  }
+  .dir-row > span:first-child {
+    transition: transform 0.45s var(--ease-out);
+  }
+  .dir-row:hover > span:first-child,
+  .dir-row:focus-visible > span:first-child {
+    transform: translateX(0.5rem);
+  }
+  .drawer-link {
+    opacity: 0;
+    transform: translateY(18px);
+    transition:
+      opacity 0.5s var(--ease-out),
+      transform 0.6s var(--ease-out);
+    transition-delay: calc(var(--i, 0) * 55ms + 120ms);
+  }
+  dialog[data-open="true"] .drawer-link {
+    opacity: 1;
+    transform: none;
+  }
+  dialog.drawer {
+    clip-path: inset(0 0 100% 0);
+    transition: clip-path 0.55s var(--ease-out);
+  }
+  dialog.drawer[data-open="true"] {
+    clip-path: inset(0);
+  }
+}
+
+dialog.drawer {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  max-width: none;
+  height: 100dvh;
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: var(--color-ink-950);
+  color: var(--color-limestone);
+}
+dialog.drawer::backdrop {
+  background: var(--color-ink-950);
+}
+
+/* Keep building strokes a constant hairline however the SVG scales. (Not applied to .draw:
+   non-scaling strokes measure dashes in screen space, which breaks pathLength-based drawing.) */
+.bldg * {
+  vector-effect: non-scaling-stroke;
 }

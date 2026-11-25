@@ -9,26 +9,42 @@ import { indexingAllowed } from "@/lib/env";
 import { serviceAreas, siteConfig } from "@/lib/site";
 
 /**
- * Fonts are self-hosted from the @fontsource-variable packages (no request to Google
- * at build or run time). `next/font/local` preloads the Latin subset and generates a
- * size-adjusted fallback so the swap from system font to web font doesn't shift layout.
+ * Fonts are self-hosted from the @fontsource packages (no request to Google at build or
+ * run time). `next/font/local` preloads the Latin subset and generates a size-adjusted
+ * fallback so the swap from system font to web font doesn't shift layout.
+ *
+ * Instrument Serif: display (400 only, plus an italic reserved for pull-quotes).
+ * Instrument Sans: text and UI, with true tabular figures for financial numbers.
  */
-const manrope = localFont({
-  src: "../node_modules/@fontsource-variable/manrope/files/manrope-latin-wght-normal.woff2",
-  weight: "200 800",
-  variable: "--font-manrope",
+const instrumentSerif = localFont({
+  src: "../node_modules/@fontsource/instrument-serif/files/instrument-serif-latin-400-normal.woff2",
+  weight: "400",
+  style: "normal",
+  variable: "--font-instrument-serif",
+  display: "swap",
+  fallback: ["Times New Roman", "Georgia", "serif"],
+  adjustFontFallback: "Times New Roman",
+});
+
+/** The italic is only used by pull-quotes, so it is not preloaded on every page. */
+const instrumentSerifItalic = localFont({
+  src: "../node_modules/@fontsource/instrument-serif/files/instrument-serif-latin-400-italic.woff2",
+  weight: "400",
+  style: "italic",
+  variable: "--font-instrument-serif-italic",
+  display: "swap",
+  preload: false,
+  fallback: ["Times New Roman", "Georgia", "serif"],
+  adjustFontFallback: "Times New Roman",
+});
+
+const instrumentSans = localFont({
+  src: "../node_modules/@fontsource-variable/instrument-sans/files/instrument-sans-latin-wght-normal.woff2",
+  weight: "400 700",
+  variable: "--font-instrument-sans",
   display: "swap",
   fallback: ["ui-sans-serif", "system-ui", "-apple-system", "Segoe UI", "Roboto", "sans-serif"],
   adjustFontFallback: "Arial",
-});
-
-const sourceSerif = localFont({
-  src: "../node_modules/@fontsource-variable/source-serif-4/files/source-serif-4-latin-wght-normal.woff2",
-  weight: "200 900",
-  variable: "--font-source-serif",
-  display: "swap",
-  fallback: ["ui-serif", "Georgia", "Times New Roman", "serif"],
-  adjustFontFallback: "Times New Roman",
 });
 
 export const metadata: Metadata = {
@@ -51,7 +67,7 @@ export const metadata: Metadata = {
   robots: indexingAllowed() ? { index: true, follow: true } : { index: false, follow: false },
 };
 
-export const viewport: Viewport = { themeColor: "#12263f", width: "device-width", initialScale: 1 };
+export const viewport: Viewport = { themeColor: "#ece6da", width: "device-width", initialScale: 1 };
 
 const organization = {
   "@context": "https://schema.org",
@@ -78,11 +94,11 @@ const organization = {
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className={`${manrope.variable} ${sourceSerif.variable}`}>
+    <html lang="en" className={`${instrumentSerif.variable} ${instrumentSerifItalic.variable} ${instrumentSans.variable}`}>
       <body className="flex min-h-dvh flex-col">
         <a
           href="#main"
-          className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-navy-800 focus:px-5 focus:py-3 focus:font-bold focus:text-white"
+          className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:bg-ink-900 focus:px-5 focus:py-3 focus:font-semibold focus:text-paper"
         >
           Skip to main content
         </a>

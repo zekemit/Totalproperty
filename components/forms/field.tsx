@@ -22,18 +22,18 @@ export function Field({ id, label, hint, errors, required, className, children }
   const describedBy = [hintId, errorId].filter(Boolean).join(" ") || undefined;
   return (
     <div className={cn("flex flex-col gap-1.5", className)}>
-      <label htmlFor={id} className="font-bold text-navy-800">
+      <label htmlFor={id} className="text-[0.9375rem] font-semibold text-ink-900">
         {label}
-        {required ? null : <span className="ml-1 font-normal text-muted">(optional)</span>}
+        {required ? null : <span className="ml-1.5 font-normal text-muted">optional</span>}
       </label>
       {children({ id, "aria-invalid": errorId ? true : undefined, "aria-describedby": describedBy, "aria-required": required ? true : undefined })}
       {hint ? (
-        <p id={hintId} className="text-[0.9375rem] text-muted">
+        <p id={hintId} className="text-sm text-muted">
           {hint}
         </p>
       ) : null}
       {errorId ? (
-        <p id={errorId} className="text-[0.9375rem] font-bold text-danger">
+        <p id={errorId} className="text-sm font-semibold text-danger">
           {errors?.[0]}
         </p>
       ) : null}
@@ -61,14 +61,14 @@ export function CheckboxField({ id, name, errors, defaultChecked, children }: Ch
           defaultChecked={defaultChecked}
           aria-invalid={errorId ? true : undefined}
           aria-describedby={errorId}
-          className="mt-1 size-6 shrink-0 cursor-pointer rounded border-2 border-field-border accent-navy-800"
+          className="mt-0.5 size-6 shrink-0 cursor-pointer rounded-[2px] border-2 border-field accent-ink-900"
         />
-        <label htmlFor={id} className="cursor-pointer text-[0.9375rem] leading-snug text-ink">
+        <label htmlFor={id} className="cursor-pointer text-[0.9375rem] leading-snug text-text">
           {children}
         </label>
       </div>
       {errorId ? (
-        <p id={errorId} className="text-[0.9375rem] font-bold text-danger">
+        <p id={errorId} className="text-sm font-semibold text-danger">
           {errors?.[0]}
         </p>
       ) : null}

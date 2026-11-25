@@ -186,3 +186,19 @@ describe("portalUrls", () => {
     expect(portalUrls()).toEqual({});
   });
 });
+
+describe("schematic data (mapped only from published services)", () => {
+  it("backs every lit function with at least one visible service line", async () => {
+    const { CLIENTS } = await import("@/lib/schematic");
+    const commercial = CLIENTS.find((c) => c.id === "commercial");
+    expect(commercial?.uses).toContain("CAM");
+    expect(commercial?.bullets.join(" ")).toMatch(/minimize CAM/i);
+    expect(commercial?.bullets.join(" ")).toMatch(/Security coordination/i);
+    expect(commercial?.bullets.join(" ")).toMatch(/Financial reporting/i);
+    for (const c of CLIENTS) {
+      expect(c.bullets.length).toBeGreaterThan(0);
+      expect(new Set(c.uses).size).toBe(c.uses.length);
+    }
+    expect(CLIENTS.map((c) => c.id)).toEqual(["owners", "commercial", "lenders", "tenants"]);
+  });
+});

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { PageHero, Section } from "@/components/site/sections";
+import { Band, PageHero } from "@/components/site/sections";
 import { siteConfig } from "@/lib/site";
 
 export const metadata: Metadata = {
@@ -11,9 +11,9 @@ export const metadata: Metadata = {
 export default function PrivacyPage() {
   return (
     <>
-      <PageHero title="Privacy policy" lede="Last updated November 25, 2026." />
-      <Section>
-        <div className="prose-block max-w-3xl">
+      <PageHero title="Privacy|policy" lede="Last updated November 25, 2026." />
+      <Band tone="travertine">
+        <div className="prose-block ">
           <p>
             This policy explains what {siteConfig.legalName} (&ldquo;we&rdquo;) collects through this website and how we use it. It applies to this website only.
           </p>
@@ -55,7 +55,7 @@ export default function PrivacyPage() {
           <h2>Contact</h2>
           <p>{siteConfig.legalName}, {siteConfig.mailingLine}.</p>
         </div>
-      </Section>
+      </Band>
     </>
   );
 }

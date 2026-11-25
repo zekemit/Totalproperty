@@ -39,7 +39,7 @@ Playwright launches Chromium. If your machine already has one (for example a CI 
 PLAYWRIGHT_CHROMIUM_EXECUTABLE=/path/to/chromium npm run test:e2e
 ```
 
-The suite covers 13 pages at desktop and phone widths: exactly one `<h1>`, no console errors, no horizontal scroll, **zero axe violations for WCAG 2.0/2.1/2.2 A and AA**, skip link, legacy redirects, security headers, sitemap/robots, the 404, the vacancy estimator, form validation, and the honest-failure path.
+The suite covers 13 pages at desktop and phone widths: exactly one `<h1>`, no console errors, no horizontal scroll, **zero axe violations for WCAG 2.0/2.1/2.2 A and AA** (measured on the settled, reduced-motion state), skip link, legacy redirects, security headers, noindex safeguards, blank-state behavior, the 404, the vacancy instrument (slider, keyboard, bad input), the schematic (which functions light for each client), the pinned services panel, the mobile menu drawer (modal, Escape, focus return), form validation, and the honest-failure path.
 
 ---
 
@@ -94,8 +94,8 @@ app/                    Routes (one folder per page), layout, metadata, sitemap,
   actions.ts            Server Actions: thin wrappers around the pipeline
 components/
   ui/                   Button, inputs (shadcn-style primitives)
-  forms/                FormShell + the four forms + vacancy estimator
-  site/                 Header, mobile nav, footer, logo, sections, team diagram
+  forms/                FormShell + the four forms + vacancy instrument
+  site/                 Header, menu drawer, footer, logo, section primitives, directory, schematic, buildings, services showcase
 lib/
   site.ts               Derives everything from src/config/site.ts (+ validation); nav, pillars
   env.ts, seo.ts        Deployment switches (indexing, canonical URL, preview forms); robots/sitemap
@@ -187,23 +187,31 @@ Rent collection and tenant/owner accounting are **not** built here. Put the plat
 
 ---
 
-## 9. Design tokens and contrast
+## 9. Design system and contrast
+
+**Concept: one foundation under four buildings.** Architectural drawing meets engraved brass: limestone paper, charcoal-navy ink, brass hairlines, building elevations drawn in line, and a lobby-directory metaphor for choosing where to go. The research and reasoning behind every choice are in [`DESIGN_OVERHAUL_NOTES.md`](./DESIGN_OVERHAUL_NOTES.md).
 
 Tokens live in `app/globals.css` (`@theme`). Tailwind v4 is CSS-first, so there is no `tailwind.config.ts`. Computed WCAG ratios:
 
 | Pair | Ratio |
 |---|---|
-| Harbor Navy `#12263F` on Alabaster `#F7F6F1` | 14.12:1 |
-| Ink `#23272E` on Alabaster | 13.85:1 |
-| Muted `#4F5762` on Alabaster | 6.76:1 |
-| **Copper accent `#8F5F00`** on Alabaster / on white | **5.10:1** / 5.52:1 |
-| White on Navy-700 `#1D3A5F` | 11.52:1 |
-| Gold `#E2B35A` on Navy-900 `#0B1A2E` (and the reverse, for buttons) | 9.01:1 |
-| Muted-on-dark `#B7C2D0` on Navy-900 | 9.69:1 |
-| Danger `#A3281F` / Success `#1F6B3F` on Alabaster | 6.74:1 / 6.00:1 |
-| Input border `#6F757D` on white (non-text, needs 3:1) | 4.65:1 |
+| Text `#151B25` on limestone `#ECE6DA` / paper `#F4F0E7` / travertine `#DFD6C4` | 13.90 / 15.19 / 11.97 |
+| Muted `#4D5560` on limestone / travertine | 6.07 / 5.23 |
+| **Brass text on limestone: `brass-700 #7A5200`** | **5.57** (travertine: 4.80) |
+| Brass `#8F5F00` on limestone / travertine | **4.44 / 3.82: fails AA**, so it is used only on the lightest paper (4.85) or at display size |
+| `brass-300 #DDB56A` on charcoal `#101927` | 9.15 |
+| Limestone on charcoal / sand `#C9BEA6` on charcoal | 14.20 / 9.58 |
+| Charcoal on `brass-400 #C99A45` (primary buttons) | 6.88 |
+| Field border `#7B7568` on paper (non-text, needs 3:1) | 4.03 |
+| Danger `#A3281F` / Success `#1F6B3F` on paper | 6.41 / 5.71 |
 
-Fonts (Manrope for headings and UI, Source Serif 4 for ledes and quotes) are self-hosted from the `@fontsource-variable` packages through `next/font/local`: preloaded, Latin subset, with a size-adjusted fallback so swapping fonts causes no layout shift.
+**Type:** Instrument Serif (display, 400 only; italic reserved for pull-quotes and loaded lazily) and Instrument Sans (text and UI). Instrument Sans has true tabular figures, so every financial number uses `tabular-nums`; Instrument Serif does not, so it never sets money. Both are self-hosted via `next/font/local`.
+
+**Surface and line:** limestone flecks and a soft light wash drawn with CSS gradients (no image: a full-width background image is an LCP candidate, and an SVG noise filter delayed LCP by over a second), 1 px drawing-grid hairlines on dark bands, dimension rules, and paper "sheets" with brass corner crop marks in place of rounded cards.
+
+**Motion:** one choreographed moment (hero headline lines rise out of a mask, the facade draws itself) plus responses to touch: menu drawer, schematic selection, directory-row hover, the vacancy bars and figure, and the pinned services drawing. Everything sits inside `prefers-reduced-motion: no-preference`; with reduced motion the final state appears immediately. No per-section fade-ins.
+
+**Signature components:** `Directory` (the audience selector as a lobby plaque), `Schematic` (four buildings on one foundation; which functions light up is mapped only from services the company already publishes, in `lib/schematic.ts`), `ServicesShowcase` (pinned drawing beside four index rows), `VacancyInstrument` (brass slider, hatched year bar, tweened figure; arithmetic on the visitor's own numbers only), `Building` (stroke-only elevations), and `NavDrawer` (native `<dialog>`, so the browser provides the focus trap and Escape handling).
 
 ---
 
@@ -211,15 +219,16 @@ Fonts (Manrope for headings and UI, Source Serif 4 for ledes and quotes) are sel
 
 | Check | Result |
 |---|---|
-| Unit tests | 120 passing |
-| Playwright e2e | 96 passing, 6 skipped by design (form submissions run on desktop only to stay inside the rate limit) |
-| axe, WCAG 2.0–2.2 A/AA | 0 violations on every page, desktop and phone |
-| Lighthouse, mobile (simulated slow 4G) | Performance: Home 96 · Owners 97 · Tenants 98 · Contact 95. **Accessibility, Best Practices, SEO: 100 on every page tested** |
-| Lighthouse, desktop (home) | 100 / 100 / 100 / 100 |
-| Core Web Vitals (lab) | CLS 0 on all four pages; LCP 2.2–2.6 s on simulated slow 4G. Home is marginally above the 2.5 s target in the lab; verify with field data (Vercel Speed Insights) after launch |
-| `npm audit` | 0 vulnerabilities (production and all dependencies) |
-| Secrets in client bundle | None (searched `.next/static` for every secret name) |
-| Images | No raster images are shipped (SVG icon, generated OG image), so there is nothing to compress. Add real photos through `next/image` (AVIF/WebP is enabled) |
+| Unit tests | 121 passing |
+| Playwright e2e | 104 passing, 10 skipped by design (each is specific to the phone or desktop layout, or limited to desktop to stay inside the form rate limit) |
+| axe, WCAG 2.0-2.2 A/AA | 0 violations on all 14 routes at desktop and phone widths. Measured on the settled state (`prefers-reduced-motion: reduce`), because axe can otherwise sample text mid-fade |
+| Lighthouse, mobile (simulated slow 4G) | Performance 95 (home), 96 (owners, tenants, contact), 97 (commercial). Accessibility 100 and Best Practices 100 on all. CLS 0 |
+| Lighthouse, desktop (home) | Performance 100, Accessibility 100, Best Practices 100 |
+| Lighthouse SEO | 66 on every page. **The only failing audit is `is-crawlable`, which is the deliberate preview `noindex`**; it returns to 100 when `ALLOW_INDEXING=true` is set at launch |
+| LCP | Lab (simulated slow 4G): 2.5-2.8 s. **Measured unthrottled in Chrome: 96-160 ms on every page tested, with or without motion.** The lab figure is Lighthouse's throttling model; confirm with field data (Vercel Speed Insights) after launch |
+| `npm audit` | 0 vulnerabilities |
+| Secrets in client bundle | None |
+| Images | No raster images ship (inline SVG drawings, generated OG image, SVG icon). Real photos go through `next/image` (AVIF/WebP enabled) |
 
 Security headers (every route): CSP (`frame-ancestors 'none'`, `object-src 'none'`, `base-uri 'self'`, `form-action 'self'`; Turnstile is the only third-party origin), `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Referrer-Policy`, `Permissions-Policy`, `Cross-Origin-Opener-Policy`, `Strict-Transport-Security` (no `preload`; joining the browser preload list is a one-way door to decide on later). `X-Powered-By` is removed. The CSP allows `'unsafe-inline'` for scripts because Next.js emits inline bootstrap scripts and a per-request nonce would force every page to render dynamically; the rest of the policy is tight to compensate.
 
@@ -296,7 +305,7 @@ The site is built so **nothing unverified is claimed**. These fields are blank u
 
 | Brief said | What I did | Why |
 |---|---|---|
-| "Approved" palette: Alabaster, Harbor Navy, copper `#8F5F00` | Implemented exactly that | The earlier plan proposed an olive/copper/gold palette; the brief's palette won. Tokens are in one file if you want to revert |
+| Phase 1 palette (Alabaster, Harbor Navy, copper `#8F5F00`) | Replaced in the design overhaul by limestone / charcoal-navy / brass, as briefed | `#8F5F00` fails AA on limestone (4.44:1), so body-size brass text uses `#7A5200` and `#8F5F00` is limited to the lightest paper and display sizes. See section 9 |
 | `tailwind.config.ts` | Not created | Tailwind v4 is CSS-first (`@theme` in `app/globals.css`); a config file would be a second source of truth |
 | `next.config.js` | `next.config.ts` | Same behavior with type checking |
 | `app/page.php` converted to `page.tsx` | `app/page.tsx` (no such PHP file existed; the legacy pages are `index.php`, `aboutus.php`, `services.php`, `contactus.php`) | Legacy URLs 301 to the new routes |

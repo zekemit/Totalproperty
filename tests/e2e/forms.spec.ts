@@ -4,16 +4,34 @@ import { expect, test } from "@playwright/test";
 // suite stays within it, so form tests run on a single project only.
 test.skip(({ isMobile }) => isMobile, "form submissions are exercised on desktop only");
 
-test.describe("vacancy estimator", () => {
+test.describe("vacancy instrument", () => {
   test("computes from the visitor's numbers and pre-fills the request form", async ({ page }) => {
     await page.goto("/owners", { waitUntil: "networkidle" });
-    await expect(page.getByText("Your numbers will appear here.")).toBeVisible();
+    await expect(page.getByText("Your cost appears here once you enter a rent.")).toBeVisible();
     await page.getByLabel("Monthly rent", { exact: true }).fill("3,000");
-    await expect(page.getByText("$2,959")).toBeVisible();
-    await expect(page.getByText(/Each empty day costs about \$99/)).toBeVisible();
+    // The headline figure tweens to its final value.
+    await expect(page.getByTestId("lost-income")).toHaveText("$2,959");
+    const result = page.getByTestId("vacancy-result");
+    await expect(result).toContainText("$99");
+    await expect(result).toContainText("$3,000");
+    await expect(result).toContainText("$36,000");
     await page.getByRole("button", { name: "Use this rent in my request" }).click();
     await expect(page.getByText("Added to the request form.")).toBeVisible();
     await expect(page.getByLabel("Current rent", { exact: false }).first()).toHaveValue("3000");
+  });
+
+  test("the slider drives the year bar and the figure, and is keyboard operable", async ({ page }) => {
+    await page.goto("/owners", { waitUntil: "networkidle" });
+    await page.getByLabel("Monthly rent", { exact: true }).fill("3000");
+    const slider = page.getByLabel("Days empty between tenants");
+    await expect(page.getByText("8%").first()).toBeVisible();
+    await slider.focus();
+    await page.keyboard.press("End"); // 120 days
+    await expect(slider).toHaveValue("120");
+    await expect(page.getByTestId("lost-income")).toHaveText("$11,836");
+    await expect(page.getByText("33%").first()).toBeVisible();
+    await page.keyboard.press("Home");
+    await expect(page.getByTestId("lost-income")).toHaveText("$0");
   });
 
   test("never shows NaN or Infinity for bad input", async ({ page }) => {

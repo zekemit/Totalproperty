@@ -70,7 +70,7 @@ export function ConsentField({ h }: { h: FormHelpers }): ReactNode {
   return (
     <CheckboxField id={h.id("consent")} name="consent" errors={h.errors("consent")} defaultChecked={h.value("consent") === "on"}>
       I agree that Total Property Management may contact me about this request by phone or email. I have read the{" "}
-      <Link href="/privacy" className="font-bold text-navy-700 underline">privacy policy</Link>.
+      <Link href="/privacy" className="font-semibold underline">privacy policy</Link>.
     </CheckboxField>
   );
 }
