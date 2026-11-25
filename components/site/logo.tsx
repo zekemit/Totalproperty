@@ -16,7 +16,7 @@ export function LogoGlyph({ className, tone = "light" }: { className?: string; t
 
 export function Logo({ tone = "light", className }: { tone?: "light" | "dark"; className?: string }) {
   return (
-    <span className={cn("inline-flex items-center gap-3", className)}>
+    <span className={cn("inline-flex shrink-0 items-center gap-3 whitespace-nowrap", className)}>
       <LogoGlyph tone={tone} />
       <span className="flex flex-col leading-none">
         <span className={cn("text-xl font-extrabold tracking-tight", tone === "light" ? "text-navy-800" : "text-white")}>

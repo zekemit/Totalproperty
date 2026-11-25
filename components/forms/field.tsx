@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 type FieldProps = {
   id: string;
   label: string;
-  /** Short helper shown under the label. */
+  /** Short helper shown under the control. */
   hint?: string;
   errors?: string[];
   required?: boolean;
@@ -26,12 +26,12 @@ export function Field({ id, label, hint, errors, required, className, children }
         {label}
         {required ? null : <span className="ml-1 font-normal text-muted">(optional)</span>}
       </label>
+      {children({ id, "aria-invalid": errorId ? true : undefined, "aria-describedby": describedBy, "aria-required": required ? true : undefined })}
       {hint ? (
         <p id={hintId} className="text-[0.9375rem] text-muted">
           {hint}
         </p>
       ) : null}
-      {children({ id, "aria-invalid": errorId ? true : undefined, "aria-describedby": describedBy, "aria-required": required ? true : undefined })}
       {errorId ? (
         <p id={errorId} className="text-[0.9375rem] font-bold text-danger">
           {errors?.[0]}

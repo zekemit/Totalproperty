@@ -35,7 +35,7 @@ export function Header() {
       </div>
 
       <div className="container-page flex min-h-20 items-center justify-between gap-6">
-        <Link href="/" aria-label={`${siteConfig.name}, home`} className="rounded-md">
+        <Link href="/" className="rounded-md">
           <Logo />
         </Link>
 

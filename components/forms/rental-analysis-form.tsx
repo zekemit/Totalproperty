@@ -8,7 +8,7 @@ import { ConsentField, PersonFields, SelectField, TextAreaField, TextField } fro
 const LABELS = {
   name: "Full name", email: "Email", phone: "Phone", street: "Street address", city: "City", state: "State",
   zip: "ZIP code", propertyType: "Property type", occupancy: "Current situation", bedrooms: "Bedrooms",
-  currentRent: "Current monthly rent", timeline: "When to start", notes: "Anything else", consent: "Consent",
+  currentRent: "Current rent", timeline: "When to start", notes: "Anything else", consent: "Consent",
 };
 
 /** `suggestedRent` pre-fills the rent field from the vacancy estimator; `rentKey` remounts it when it changes. */
@@ -42,11 +42,11 @@ export function RentalAnalysisForm({ suggestedRent, rentKey = 0 }: { suggestedRe
                 key={rentKey}
                 h={h}
                 name="currentRent"
-                label="Current monthly rent"
+                label="Current rent"
                 required={false}
                 inputMode="decimal"
                 maxLength={9}
-                hint="If it's rented now."
+                hint="Monthly, if it's rented now."
                 defaultValue={suggestedRent}
               />
               <SelectField h={h} name="timeline" label="When to start" options={timelineOptions} />
