@@ -23,7 +23,7 @@
 ## Review Focus
 
 1. Submitter pastes HTML/`<script>`/control characters in free text → stored as plain text, escaped in email, no markup injected.
-2. Bot fills honeypot or submits in <2 s → silent success, nothing stored or emailed.
+2. Bot fills honeypot or reports a <800 ms client-measured fill time → silent success, nothing stored or emailed; real users with browser autofill (≈1–2 s) must still get through.
 3. Same IP floods a form → 429-style error after the limit, not an outage.
 4. Supabase configured but email isn't (or vice-versa) → submission still succeeds if at least one channel durably received it; neither configured in production → honest 503 error.
 5. Rent/vacancy calculator receives empty, zero, negative, or absurd numbers → no `NaN`/`Infinity` displayed.
