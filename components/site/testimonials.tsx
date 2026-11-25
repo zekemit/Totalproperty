@@ -1,12 +1,13 @@
 import { Band, display, PullQuote, SectionTitle } from "./sections";
-import { siteConfig } from "@/lib/site";
+import { getContent } from "@/lib/cms/content";
 
 /**
  * Client quotes from `testimonials` in src/config/site.ts. The first is set as a large
  * pull-quote, the rest as ruled columns. Renders nothing until one is supplied.
  */
-export function Testimonials({ tone = "travertine" }: { tone?: "limestone" | "travertine" }) {
-  const [first, ...rest] = siteConfig.testimonials;
+export async function Testimonials({ tone = "travertine" }: { tone?: "limestone" | "travertine" }) {
+  const { site } = await getContent();
+  const [first, ...rest] = site.testimonials;
   if (!first) return null;
   return (
     <Band tone={tone} labelledBy="testimonials-h">

@@ -3,6 +3,9 @@
 Marketing site and lead-conversion engine for Total Property Management (Purcellville, VA; serving Virginia, Maryland, Pennsylvania and DC).
 
 - **Strategy and research:** [`TOTAL_PROPERTY_AUDIT.md`](./TOTAL_PROPERTY_AUDIT.md), [`MASTER_TRANSFORMATION_PLAN.md`](./MASTER_TRANSFORMATION_PLAN.md)
+- **Reference-site merge (maxalley.net/tpm) and what changed:** [`MAXALLEY_REFERENCE_AUDIT.md`](./MAXALLEY_REFERENCE_AUDIT.md)
+- **Editing the site without code:** [Section 15, the site editor](#15-the-site-editor-admin) and [Section 16, connect Upstash](#16-connect-upstash-so-saving-works-in-production)
+- **Ranking and ads:** [Section 17, the first-page search and Google Ads launch checklist](#17-first-page-search-and-google-ads-launch-checklist)
 - **Implementation plan for this build:** [`docs/superpowers/plans/2026-11-25-phase1-marketing-site.md`](./docs/superpowers/plans/2026-11-25-phase1-marketing-site.md)
 
 **Scope (hybrid architecture).** This repository contains the public site, the lead pipeline and the database for inbound requests. It deliberately does **not** collect rent, hold tenant ledgers or do owner accounting; those run on a property-management platform, and the site links out to it (see [Portal and payment links](#8-portal-and-payment-links)). The lender/REO tracking module is a later phase.
@@ -27,7 +30,7 @@ With no environment variables set, the site runs and the forms validate. In deve
 | `npm run build` / `npm start` | Production build / serve it |
 | `npm run typecheck` | `tsc --noEmit` (strict) |
 | `npm run lint` | ESLint (Next.js core-web-vitals + TypeScript rules) |
-| `npm test` | Vitest unit tests (120) |
+| `npm test` | Vitest unit tests (199) |
 | `npm run check` | typecheck + lint + unit tests |
 | `npm run test:e2e` | Playwright end-to-end + axe accessibility audit (builds and serves a fresh copy) |
 
@@ -39,11 +42,13 @@ Playwright launches Chromium. If your machine already has one (for example a CI 
 PLAYWRIGHT_CHROMIUM_EXECUTABLE=/path/to/chromium npm run test:e2e
 ```
 
-The suite covers 13 pages at desktop and phone widths: exactly one `<h1>`, no console errors, no horizontal scroll, **zero axe violations for WCAG 2.0/2.1/2.2 A and AA** (measured on the settled, reduced-motion state), skip link, legacy redirects, security headers, noindex safeguards, blank-state behavior, the 404, the vacancy instrument (slider, keyboard, bad input), the schematic (which functions light for each client), the pinned services panel, the mobile menu drawer (modal, Escape, focus return), form validation, and the honest-failure path.
+The suite covers 16 public pages at desktop and phone widths, plus the editor (`tests/e2e/admin.spec.ts`, which runs last and alone against a throwaway content file and a test password, both set in `playwright.config.ts`): exactly one `<h1>`, no console errors, no horizontal scroll, **zero axe violations for WCAG 2.0/2.1/2.2 A and AA** (measured on the settled, reduced-motion state), skip link, legacy redirects, security headers, noindex safeguards, blank-state behavior, the 404, the vacancy instrument (slider, keyboard, bad input), the schematic (which functions light for each client), the pinned services panel, the mobile menu drawer (modal, Escape, focus return), form validation, and the honest-failure path.
 
 ---
 
-## 2. Business information: the one file to edit
+## 2. Business information: the standard values
+
+> **Two ways to change content.** `src/config/site.ts` holds the *standard* values and needs a code change and a deploy. The **site editor at `/admin`** (section 15) saves changes that are layered on top of these values, live within seconds, with no code. A value set in the editor wins; clear it there and the standard value returns.
 
 Everything the business still needs to confirm lives in **[`src/config/site.ts`](./src/config/site.ts)**, clearly commented, with every blank item marked `PENDING` and every confirmed item marked `VERIFIED`. Edit it, commit, push to `main`, and Vercel redeploys.
 
@@ -89,23 +94,40 @@ Vercel settings applied to the project: framework Next.js, Node 22, system envir
 ## 4. Project layout
 
 ```
-src/config/             site.ts: ALL business information (edit this); types.ts: its shapes
-app/                    Routes (one folder per page), layout, metadata, sitemap, robots, OG image
-  actions.ts            Server Actions: thin wrappers around the pipeline
+src/config/             site.ts: the standard business information (edit this, or use /admin); types.ts: its shapes
+app/
+  layout.tsx            Root: fonts, <html>, metadata from the live content
+  (site)/               Every public page, wrapped by the header, footer, announcement and structured data
+    page.tsx            Home, in the reference site's order (hero, statement, property types ...)
+    services, owners, tenants, commercial, lenders, about, contact, vendors, portal,
+    careers, spaces, newsletter, privacy, accessibility, fair-housing
+  admin/                The site editor: login page, and (panel)/ with the editor and its save action
+  api/admin/            login and logout routes (rate-limited, same-origin checked)
+  actions.ts            Server Actions for the public forms: thin wrappers around the pipeline
+  sitemap.ts, robots.ts Built from the live content; /admin is never listed
 components/
   ui/                   Button, inputs (shadcn-style primitives)
-  forms/                FormShell + the four forms + vacancy instrument
-  site/                 Header, menu drawer, footer, logo, section primitives, directory, schematic, buildings, services showcase
+  forms/                FormShell + the five forms (contact, rental analysis, maintenance, vendor, newsletter) + vacancy instrument
+  site/                 Header, drawer, footer, hero slides, property types, service splits, listings, announcement, schematic ...
+  admin/                The editor UI: tabs, field primitives, reorderable lists, the sticky save bar
 lib/
-  site.ts               Derives everything from src/config/site.ts (+ validation); nav, pillars
-  env.ts, seo.ts        Deployment switches (indexing, canonical URL, preview forms); robots/sitemap
-  catalog.ts            Service catalogue copy (from the company's own services page)
-  portals.ts            Portal/payment outbound links from the config (https only)
+  site.ts               Derives everything from a SiteConfig (+ validation); navigation
+  cms-storage.ts        Where edits are kept: Upstash Redis, a local file, or read-only
+  cms/                  schema (Zod, safe links), defaults, merge (standard + edits), hours, content loader
+  admin/                Password check, signed session cookie, login rate limit
+  seo-schema.ts         LocalBusiness / RealEstateAgent JSON-LD built from the live content
+  page-metadata.ts      Per-page title, description, canonical and Open Graph from the SEO tab
+  env.ts, seo.ts        Deployment switches (indexing, canonical URL, preview forms); robots/sitemap builders
+  catalog.ts            Long-form service copy used on the commercial, lender and owner pages
+  portals.ts            Portal/payment outbound links (https only)
+  photos.ts             The bundled photo library (public/photos) with alt text
   calc/vacancy.ts       Vacancy arithmetic (no market data)
   forms/                schemas, security, pipeline, mailer, store, runtime
   supabase/             Admin client (server-only) and database types
+public/photos/          Logo mark and the optimised photo library
 supabase/migrations/    SQL schema + RLS
-tests/unit, tests/e2e   Vitest, Playwright + axe
+data/                   Local-only editor content (cms-overrides.json), git-ignored
+tests/unit, tests/e2e   Vitest; Playwright + axe (including the editor's sign-in and save flows)
 ```
 
 ---
@@ -123,9 +145,14 @@ Copy `.env.example`. **Everything is server-only unless it starts with `NEXT_PUB
 | `TURNSTILE_SECRET_KEY` | server | If set, every form requires a valid Turnstile token. **Set the site key too, or no one can submit.** |
 | `IP_HASH_SECRET` | server | HMAC key for hashing IPs before storage (`openssl rand -hex 32`). Unset = no IP data stored |
 | `ALLOW_INDEXING` | server | `true` lets search engines in. **Default: blocked.** Set only at DNS cutover |
+| `ADMIN_PASSWORD` | server | The editor's password (at least 12 characters). Unset = the editor is locked and says how to set it up |
+| `ADMIN_SESSION_SECRET` | server | Optional (16+ characters). Key that signs editor sessions. Unset = derived from the password, so changing the password signs everyone out |
+| `KV_REST_API_URL`, `KV_REST_API_TOKEN` | server | Upstash Redis (Vercel Marketplace names). Where editor changes are saved in production |
+| `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN` | server | The same thing under Upstash's own names; either pair works |
+| `CMS_FILE_PATH` | server | Optional. Where the local editor file lives (default `data/cms-overrides.json`); development and tests only |
 | `FORMS_PREVIEW_MODE` | server | `true` makes forms show a labelled preview success when no database or email is configured. Remove at launch |
 
-Business details (licenses, leadership, testimonials, photos, portal and payment links, address, hours) are **not** environment variables; see section 2.
+Business details (licenses, leadership, testimonials, photos, portal and payment links, address, hours) are **not** environment variables; see section 2, or change them in the site editor (section 15).
 
 Delivery rules (tested): a submission succeeds if **at least one** of storage or email received it; if both are configured and both fail, or neither is configured in production, the visitor sees a clear error with the phone and email.
 
@@ -219,16 +246,15 @@ Tokens live in `app/globals.css` (`@theme`). Tailwind v4 is CSS-first, so there 
 
 | Check | Result |
 |---|---|
-| Unit tests | 121 passing |
-| Playwright e2e | 104 passing, 10 skipped by design (each is specific to the phone or desktop layout, or limited to desktop to stay inside the form rate limit) |
-| axe, WCAG 2.0-2.2 A/AA | 0 violations on all 14 routes at desktop and phone widths. Measured on the settled state (`prefers-reduced-motion: reduce`), because axe can otherwise sample text mid-fade |
-| Lighthouse, mobile (simulated slow 4G) | Performance 95 (home), 96 (owners, tenants, contact), 97 (commercial). Accessibility 100 and Best Practices 100 on all. CLS 0 |
-| Lighthouse, desktop (home) | Performance 100, Accessibility 100, Best Practices 100 |
-| Lighthouse SEO | 66 on every page. **The only failing audit is `is-crawlable`, which is the deliberate preview `noindex`**; it returns to 100 when `ALLOW_INDEXING=true` is set at launch |
-| LCP | Lab (simulated slow 4G): 2.5-2.8 s. **Measured unthrottled in Chrome: 96-160 ms on every page tested, with or without motion.** The lab figure is Lighthouse's throttling model; confirm with field data (Vercel Speed Insights) after launch |
+| Unit tests | 199 passing (adds the editor's safe-link rules, schema, merge/defaults, storage modes, session and login-limit logic, newsletter pipeline, and the sitemap/robots switch) |
+| Playwright e2e | 150 passing, 12 skipped by design (each is specific to the phone or desktop layout, or limited to desktop to stay inside the form rate limit). Includes the editor: sign-in, tampered cookie, cross-site login, saving every kind of content, rejecting unsafe links and pictures, and seeing each change on the public site |
+| axe, WCAG 2.0-2.2 A/AA | 0 violations on all 16 public routes at desktop and phone widths, on the login page, and on all 7 editor sections. Measured on the settled state (`prefers-reduced-motion: reduce`), because axe can otherwise sample text mid-fade |
+| LCP and CLS (this build) | Measured unthrottled in Chrome on `/`, `/owners`, `/services` at 1440 px and 390 px, three runs each: **LCP 96-192 ms** (the headline text, not the hero photo), **CLS at most 0.004**. The hero photo is a preloaded, optimised WebP and does not become the LCP element |
+| Lighthouse | Not re-run for this build. The previous design build scored Performance 95-100, Accessibility 100, Best Practices 100. Re-run before launch (the lab "simulated slow 4G" LCP of about 2.5 s is Lighthouse's throttling model, not what visitors measure) |
+| Lighthouse SEO | The only failing audit on a preview is `is-crawlable`, the deliberate `noindex`; it passes once `ALLOW_INDEXING=true` is set at launch |
 | `npm audit` | 0 vulnerabilities |
 | Secrets in client bundle | None |
-| Images | No raster images ship (inline SVG drawings, generated OG image, SVG icon). Real photos go through `next/image` (AVIF/WebP enabled) |
+| Images | Photos in `public/photos` (about 1.1 MB in total, each at most 1280 px wide WebP) go through `next/image` (AVIF/WebP, responsive sizes). **Provenance is unconfirmed**: they came from the reference site and look like stock or rendered imagery; see `MAXALLEY_REFERENCE_AUDIT.md` |
 
 Security headers (every route): CSP (`frame-ancestors 'none'`, `object-src 'none'`, `base-uri 'self'`, `form-action 'self'`; Turnstile is the only third-party origin), `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Referrer-Policy`, `Permissions-Policy`, `Cross-Origin-Opener-Policy`, `Strict-Transport-Security` (no `preload`; joining the browser preload list is a one-way door to decide on later). `X-Powered-By` is removed. The CSP allows `'unsafe-inline'` for scripts because Next.js emits inline bootstrap scripts and a per-request nonce would force every page to render dynamically; the rest of the policy is tight to compensate.
 
@@ -319,3 +345,113 @@ The site is built so **nothing unverified is claimed**. These fields are blank u
 | `leads`, `rental_analysis`, contact submissions tables | Done, plus attribution columns and kind-specific constraints | Maintenance and vendor requests share `contact_submissions` |
 
 Known limits: forms need JavaScript; the in-memory rate limiter is per-instance (use the Firewall rule); home-page mobile LCP is 2.6 s in the slow-4G lab (verify with field data); the lender/REO tracking module and the owner/tenant dashboards are later phases by design.
+
+---
+
+## 15. The site editor (/admin)
+
+*For Uncle Rafi.* You can change the wording, services, properties, contact details and search-result text yourself. No code, nothing to install.
+
+**Sign in.** Go to `https://totalproperty.vercel.app/admin` (later `https://totalproperty.us/admin`) and enter the password. The page is private and never appears in Google. Sessions last a week; use **Sign out** on a shared computer.
+
+**Save.** The bar at the bottom of the screen says **You have unsaved changes** until you press **Save changes**. Your edits go live within a few seconds; press **View the site** to see them. **Discard changes** goes back to the last saved version. If something is wrong (for example a link that does not start with `https://`), the editor tells you which field and does not save anything.
+
+| Tab | What you can do |
+|---|---|
+| **Announcement** | Turn a banner (across the top of every page) or a pop-up (once per visit) on or off. Headline, message, a button and where it goes. Your wording is kept when you switch it off. |
+| **Homepage & hero** | The big headline (up to three lines), the paragraph under it, the two buttons, the pit bull line, and up to four key points. |
+| **Services** | Add, edit, reorder or hide each service (Landlord, Tenant, Construction, Residential, Lender/REO, and two ready-made ones you can switch on: Maintenance and Leasing). The same tab edits the photo cards under "Property types we manage". |
+| **Featured properties** | Add rentals or spaces: title, picture (with a live preview), rent, details, location and a status badge (Available now, Coming soon, Application pending, Recently leased). They appear on **Looking For a Space**; the first three also appear on the home page. With none, the page invites people to get in touch. |
+| **Company, reviews & portals** | Phone, after-hours phone, email, office hours (a day-by-day grid that also feeds Google), license numbers for VA, MD, PA and DC (blank rows are never shown), client reviews, and the Owner, Tenant and Pay-rent login links (must start with `https://`). |
+| **SEO & page titles** | The title and description Google shows for every page, with a live preview and a character guide, plus your local keywords. |
+| **Careers** | Openings for the Join Our Team page and the "Why work here?" list. With none, the page asks people to send a résumé to your email. |
+
+**Pictures.** Paste a picture link that starts with `https://`, or press **Choose from the photo library** to pick one of the bundled photos. You cannot upload files in the editor. To use your own photos, put the files in `public/photos/` (or host them anywhere with an `https://` address) and paste the link. Always fill in "Describe the picture": it helps people who cannot see it and helps search.
+
+**Ordering and hiding.** Use the up and down arrows to reorder. A **Showing / Hidden** switch hides something without deleting it. **Remove** asks a second time before deleting.
+
+**Two windows at once.** If you save from one window and then try to save an older copy from another, the editor stops you and asks you to reload, so you never overwrite newer work.
+
+**Forgot or want to change the password.** In Vercel, open the project, Settings, Environment Variables, change `ADMIN_PASSWORD` (at least 12 characters) and redeploy. Everyone is signed out.
+
+**What the editor does not do.** It changes content, not layout or design, and it does not publish the site to a new address.
+
+### How it is protected
+
+- One password (`ADMIN_PASSWORD`, at least 12 characters), compared in constant time. A wrong password gets a short delay; more than 8 attempts in 15 minutes from one address are refused (shared across servers when Upstash is connected).
+- A signed session cookie: `HttpOnly`, `SameSite=Lax`, `Secure` in production, 7 days. Tampered or expired cookies are rejected. Login and logout also refuse requests that do not come from this site.
+- Every save re-checks the session on the server and validates everything with Zod. Links may be `https://`, `http://`, `mailto:`, `tel:` or a page on this site; pictures may be `https://` or a file on this site. `javascript:`, `data:` and look-alike tricks such as `//evil.com` are rejected, and the same checks run again when a page renders.
+- `/admin` and `/api/admin` always send `X-Robots-Tag: noindex, nofollow, noarchive` and `Cache-Control: no-store`, are disallowed in `robots.txt` and are never in the sitemap, even after `ALLOW_INDEXING=true`.
+- A broken or unreachable store can never take the public site down: it falls back to the standard content.
+
+---
+
+## 16. Connect Upstash (so saving works in production)
+
+Until a database is connected the editor on Vercel opens but shows a red notice and **will not save** (a serverless disk would silently forget your changes). Locally, with no setup, edits are saved to `data/cms-overrides.json`.
+
+**Set up (about five minutes, free tier is enough):**
+
+1. In Vercel, open the **totalproperty** project, then **Storage**, then **Create Database**, then choose **Upstash** (Redis). Pick the region nearest to Virginia (for example `iad1`/N. Virginia) and the free plan.
+2. When asked, **connect it to this project** for Production, Preview and Development.
+3. Open **Settings, Environment Variables**. You should now see `KV_REST_API_URL` and `KV_REST_API_TOKEN` (or `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN`). Either pair works; nothing else to copy.
+4. Add `ADMIN_PASSWORD` (at least 12 characters) if you have not already. Optionally add `ADMIN_SESSION_SECRET` (any random 16+ characters, for example the output of `openssl rand -hex 24`).
+5. **Redeploy** (Deployments, the latest one, Redeploy) so the new variables take effect.
+6. Open `/admin`, sign in, change something small and press **Save changes**. The red notice is gone, and the change appears on the site.
+
+Not using the Marketplace? Create a Redis database at upstash.com, copy the **REST URL** and **REST token** (not the `redis://` address), and add them as `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN`.
+
+**Good to know.** The content is one small JSON value stored under `tpm:cms:overrides:v1`; the version before each save is kept at `tpm:cms:overrides:v1:previous`, so an emergency restore is possible from the Upstash console. Public pages stay statically generated and fast: saving triggers an immediate revalidation, and as a safety net they also refresh within 5 minutes.
+
+---
+
+## 17. First-page search and Google Ads launch checklist
+
+**Be realistic.** No one can promise a first-page ranking. This build removes the technical obstacles and gives you the signals Google uses for local results; the rest is your Google Business Profile, reviews and time. Everything below assumes the preview site is signed off.
+
+### A. Switch the site on for search (once, at DNS cutover)
+
+- [ ] Finish the DNS steps in section 12 (A and CNAME records only; leave the Microsoft 365 MX and TXT records alone).
+- [ ] In Vercel set `NEXT_PUBLIC_SITE_URL=https://totalproperty.us` and `ALLOW_INDEXING=true`, then redeploy. Remove `FORMS_PREVIEW_MODE`.
+- [ ] Check `https://totalproperty.us/robots.txt` allows crawling and lists `/sitemap.xml`; check `/sitemap.xml` lists every page; check a page's source no longer says `noindex`.
+- [ ] Check `https://totalproperty.us/admin` still answers with `noindex`.
+- [ ] In the editor, open **SEO & page titles** and read each page's title and description; they already include Purcellville and your service areas.
+- [ ] In the editor, fill in **office hours** and confirm the phone number. They feed Google's business data.
+- [ ] Add the **license numbers** you have confirmed, and real **client reviews** (with permission). Both are hidden until filled in.
+
+### B. Google Business Profile (the biggest local-ranking lever)
+
+- [ ] Create or claim the profile at business.google.com. Category: **Property management company**; add secondary categories that truly apply (for example **Commercial real estate agency** only if licensed as such).
+- [ ] **Address.** Google does not accept a PO box as a business location. Either add a real street address, or set the profile up as a **service-area business** (hide the address, list Purcellville, Loudoun County, Virginia, Maryland, Pennsylvania and DC). If you add a street address, also put it in `src/config/site.ts` (`address.street`) so the site and Google match.
+- [ ] Use the **exact** business name, phone `202-528-0140` and website `https://totalproperty.us`, matching the site's footer (consistency matters).
+- [ ] Add the same hours as the editor, your services, and real photos of your team and properties (the bundled stock images are for the website only).
+- [ ] Complete verification (video, phone or postcard, as offered).
+- [ ] Ask satisfied clients for reviews with your profile's review link; reply to every review. Never buy or incentivise reviews.
+
+### C. Google Search Console and Bing
+
+- [ ] At search.google.com/search-console add the **Domain** property `totalproperty.us`. Verification adds one DNS **TXT** record: add it alongside the existing Microsoft 365 records and remove nothing.
+- [ ] Open **Sitemaps** and submit `https://totalproperty.us/sitemap.xml`.
+- [ ] Use **URL Inspection** on `/`, `/owners`, `/tenants`, `/commercial` and `/spaces`, then **Request indexing**.
+- [ ] After a week, check **Pages** (indexed or not, and why) and **Core Web Vitals**.
+- [ ] Optional: import the site into Bing Webmaster Tools from Search Console.
+
+### D. Local citations (name, address, phone must match everywhere)
+
+Add or claim the business, with identical details, on: Apple Business Connect, Bing Places, Yelp, Facebook, LinkedIn, the Better Business Bureau, Nextdoor Business, your chamber of commerce or business association (for example Loudoun County and Purcellville), and any industry or licensing directory you genuinely belong to. Skip anything you do not qualify for. Link each listing to `https://totalproperty.us`.
+
+### E. Google Ads
+
+- [ ] Landing pages: **`/owners`** (landlords: keyword headline, free rental analysis, vacancy calculator, tap-to-call and a sticky call/analysis bar on phones) and **`/commercial`**. **`/tenants`** serves people who already rent from you (pay rent, report a repair, portal), so use it for branded searches rather than prospecting. `/spaces` suits "space for lease" searches once properties are listed.
+- [ ] Tag every ad's final URL with first-touch attribution, which the site records on every form: `?utm_source=google&utm_medium=cpc&utm_campaign=owners-purcellville` (change the last part per campaign). Each submission stores these in the `leads` table.
+- [ ] Start small: a Search campaign, location-targeted to your real area, phrase and exact-match keywords such as "property management Purcellville", "rental property management Loudoun County", "commercial property management Northern Virginia"; add negatives such as "jobs", "salary", "software", "for sale".
+- [ ] Add call and sitelink assets pointing at `/owners#analysis`, `/commercial`, `/contact`.
+- [ ] Measure: the site has no analytics tag yet (a deliberate choice: nothing third-party loads, and the Content-Security-Policy would block it). To count form conversions in Google Ads, ask for the Google tag to be added with a consent banner and a matching CSP change; until then use the `leads` table and phone-call reporting.
+- [ ] **Local Services Ads** use a separate Google screening and are available only in certain categories and areas: check eligibility in your Google Ads account before planning for them.
+- [ ] Housing advertising has special fair-housing rules at Google and in law: keep ad copy neutral and never target by protected characteristics.
+
+### F. Keep earning the ranking
+
+- Keep wording specific: name the town, county and service in the editor's text fields. Rewrite titles and descriptions if a page is not getting clicks.
+- Publish real, updated spaces under **Featured properties**; fresh, accurate listings are useful to visitors and to Google.
+- Keep your hours, phone and services identical on the site, your Google profile and every citation.

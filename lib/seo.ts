@@ -2,7 +2,8 @@ import type { MetadataRoute } from "next";
 
 export function buildRobots(allowIndexing: boolean, siteUrl: string): MetadataRoute.Robots {
   if (!allowIndexing) return { rules: [{ userAgent: "*", disallow: "/" }] };
-  return { rules: [{ userAgent: "*", allow: "/" }], sitemap: `${siteUrl}/sitemap.xml` };
+  // /admin and its API are never crawled, even once the public site is open to search engines.
+  return { rules: [{ userAgent: "*", allow: "/", disallow: ["/admin", "/api/admin"] }], sitemap: `${siteUrl}/sitemap.xml` };
 }
 
 export type RouteEntry = { path: string; priority: number };

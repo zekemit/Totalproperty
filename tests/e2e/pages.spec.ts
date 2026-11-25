@@ -4,6 +4,7 @@ import { expect, test } from "@playwright/test";
 const routes = [
   "/", "/owners", "/commercial", "/lenders", "/tenants", "/services", "/about",
   "/contact", "/vendors", "/portal", "/privacy", "/accessibility", "/fair-housing",
+  "/careers", "/spaces", "/newsletter",
 ];
 
 for (const route of routes) {
@@ -52,6 +53,8 @@ test("keyboard: skip link is first focusable element and targets main", async ({
 test("legacy PHP URLs permanently redirect", async ({ request }) => {
   const map: Record<string, string> = {
     "/index.php": "/", "/aboutus.php": "/about", "/services.php": "/services", "/contactus.php": "/contact",
+    // The reference draft's URLs (maxalley.net/tpm).
+    "/about.php": "/about", "/team.php": "/careers", "/team": "/careers", "/space": "/spaces",
   };
   for (const [from, to] of Object.entries(map)) {
     const res = await request.get(from, { maxRedirects: 0 });
@@ -105,6 +108,94 @@ test("with pending business info left blank nothing renders half-empty or overcl
   await expect(page.getByText(/To get set up with your tenant portal, call/)).toBeVisible();
   await page.goto("/portal", { waitUntil: "networkidle" });
   await expect(page.getByText(/To get portal access, call/).first()).toBeVisible();
+  // No listings, openings or benefits are invented: empty states tell people how to reach us.
+  await page.goto("/spaces", { waitUntil: "networkidle" });
+  await expect(page.getByText("Nothing is listed here right now.")).toBeVisible();
+  await page.goto("/careers", { waitUntil: "networkidle" });
+  await expect(page.getByText(/There are no openings posted right now/)).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Why work here?" })).toHaveCount(0);
+  await page.goto("/", { waitUntil: "networkidle" });
+  await expect(page.getByRole("heading", { name: "Available now" })).toHaveCount(0);
+});
+
+test.describe("the reference site's structure", () => {
+  test("primary navigation matches maxalley.net/tpm, in order", async ({ page, isMobile }) => {
+    test.skip(isMobile, "the full nav row is a wide-screen layout; the drawer is covered separately");
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto("/", { waitUntil: "networkidle" });
+    const labels = await page.getByRole("navigation", { name: "Primary" }).getByRole("link").allInnerTexts();
+    expect(labels).toEqual(["Home", "Services", "Join Our Team", "About", "Looking For a Space", "Newsletter", "Vendors", "Contact"]);
+    await expect(page.getByRole("navigation", { name: "Primary" }).getByRole("link", { name: "Home" })).toHaveAttribute("aria-current", "page");
+  });
+
+  test("home follows the reference order: hero, statement, property types", async ({ page }) => {
+    await page.goto("/", { waitUntil: "networkidle" });
+    await expect(page.locator("h1")).toContainText("Total Property Management");
+    const headings = await page.locator("main h2").allInnerTexts();
+    expect(headings[0]).toMatch(/We are pitbulls about our client.s assets/);
+    expect(headings[1]).toMatch(/Property types\s+we manage/);
+    for (const t of ["Retail", "Industrial", "Marinas", "Hospitality", "Office", "Residential"]) {
+      await expect(page.getByRole("heading", { level: 3, name: t, exact: true })).toBeVisible();
+    }
+  });
+
+  test("services page shows the reference's three services first, with their chips", async ({ page }) => {
+    await page.goto("/services", { waitUntil: "networkidle" });
+    const titles = await page.locator("main h2").allInnerTexts();
+    expect(titles.slice(0, 4)).toEqual(["Dedicated to providing the highest quality service", "Landlord Services", "Tenant Services", "Commercial Construction Services"]);
+    await expect(page.getByText("Lot Sweeping")).toBeVisible();
+    await expect(page.getByText("Final Punch Listing")).toBeVisible();
+  });
+
+  test("the hero slideshow can be paused and every slide has a describable label", async ({ page, isMobile }) => {
+    test.skip(isMobile, "pause control is exercised on desktop");
+    await page.goto("/", { waitUntil: "networkidle" });
+    const pause = page.getByRole("button", { name: "Pause slideshow" });
+    await expect(pause).toBeVisible();
+    await pause.click();
+    await expect(page.getByRole("button", { name: "Play slideshow" })).toHaveAttribute("aria-pressed", "true");
+    for (const label of ["Office", "Retail", "Residential", "Industrial"]) {
+      await expect(page.getByRole("button", { name: `Show ${label}` })).toBeVisible();
+    }
+  });
+});
+
+test.describe("search readiness", () => {
+  test("structured data is valid JSON with the local business details and service catalogue", async ({ page }) => {
+    await page.goto("/", { waitUntil: "networkidle" });
+    const blocks = await page.locator('script[type="application/ld+json"]').allInnerTexts();
+    const biz = blocks.map((b) => JSON.parse(b) as Record<string, unknown>).find((j) => JSON.stringify(j["@type"]).includes("RealEstateAgent"));
+    expect(biz).toBeTruthy();
+    const b = biz as Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
+    expect(b["@type"]).toEqual(["LocalBusiness", "RealEstateAgent"]);
+    expect(b.telephone).toBe("+12025280140");
+    const areas = (b.areaServed as { name: string }[]).map((a) => a.name);
+    for (const expected of ["Purcellville, VA", "Loudoun County, VA", "Northern Virginia", "Virginia", "Maryland", "Pennsylvania", "Washington, DC"]) expect(areas).toContain(expected);
+    const offers = (b.hasOfferCatalog.itemListElement as { itemOffered: { name: string } }[]).map((o) => o.itemOffered.name);
+    expect(offers).toEqual(expect.arrayContaining(["Landlord Services", "Residential Owner Services", "Lender and REO Services"]));
+  });
+
+  test("each landing page has its own title, description and canonical", async ({ page }) => {
+    const seen = new Set<string>();
+    for (const route of ["/", "/owners", "/tenants", "/commercial", "/services", "/spaces"]) {
+      await page.goto(route, { waitUntil: "networkidle" });
+      const title = await page.title();
+      expect(title.length).toBeGreaterThan(20);
+      expect(seen.has(title)).toBe(false);
+      seen.add(title);
+      expect(((await page.locator('meta[name="description"]').getAttribute("content")) ?? "").length).toBeGreaterThan(60);
+      await expect(page.locator('meta[property="og:title"]')).toHaveAttribute("content", title);
+    }
+  });
+
+  test("owners and tenants are ad-ready: keyword H1, a way to call, and the request form in reach", async ({ page }) => {
+    await page.goto("/owners", { waitUntil: "networkidle" });
+    await expect(page.locator("h1")).toContainText("Rental property management");
+    await expect(page.locator("main").getByRole("link", { name: /Call 202-528-0140/ }).first()).toBeVisible();
+    await expect(page.locator("#analysis form")).toBeVisible();
+    await page.goto("/tenants", { waitUntil: "networkidle" });
+    await expect(page.locator("h1")).toContainText("Tenant portal");
+  });
 });
 
 test("unknown URL shows the helpful 404 with one h1", async ({ page }) => {

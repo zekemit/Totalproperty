@@ -2,20 +2,14 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { commercialLandlord, construction, lenderServices, ownerServices } from "@/lib/catalog";
-import { pillars, type Pillar } from "@/lib/site";
+import type { ServiceDoc } from "@/lib/cms/schema";
+import { isExternal, safeHref } from "@/lib/cms/safe-url";
 import { cn } from "@/lib/utils";
 import { Building, type BuildingKind } from "./buildings";
 import { display, RuledList } from "./sections";
 
-const KIND: Record<Pillar["id"], BuildingKind> = { residential: "owners", commercial: "commercial", construction: "construction", lender: "lenders" };
-
-const BULLETS: Record<Pillar["id"], readonly string[]> = {
-  residential: ownerServices.items,
-  commercial: commercialLandlord.items.slice(0, 4),
-  construction: construction.items.slice(0, 4),
-  lender: lenderServices.items.slice(0, 3),
-};
+const KIND: Record<string, BuildingKind> = { residential: "owners", landlord: "commercial", tenant: "tenants", construction: "construction", lender: "lenders", leasing: "commercial", maintenance: "commercial" };
+const kindOf = (id: string): BuildingKind => KIND[id] ?? "commercial";
 
 /**
  * Split-screen index of the four services. On large screens the drawing on the left is
@@ -23,7 +17,7 @@ const BULLETS: Record<Pillar["id"], readonly string[]> = {
  * on small screens each row carries its own drawing. Without JavaScript every row still
  * reads in order.
  */
-export function ServicesShowcase() {
+export function ServicesShowcase({ services }: { services: readonly ServiceDoc[] }) {
   const [active, setActive] = useState(0);
   const list = useRef<HTMLOListElement>(null);
 
@@ -40,7 +34,8 @@ export function ServicesShowcase() {
     return () => io.disconnect();
   }, []);
 
-  const current = pillars[active] ?? pillars[0]!;
+  const current = services[active] ?? services[0];
+  if (!current) return null;
 
   return (
     <div className="grid gap-x-16 lg:grid-cols-12">
@@ -48,9 +43,9 @@ export function ServicesShowcase() {
         <div className="on-dark sticky top-24 flex h-[calc(100svh-8rem)] max-h-[42rem] flex-col justify-between border border-brass-500/50 bg-ink-900 p-8 text-limestone">
           <p className="font-display text-[9rem] leading-none text-brass-300">{String(active + 1).padStart(2, "0")}</p>
           <div className="relative mx-auto my-6 w-full max-w-[17rem] flex-1">
-            {pillars.map((p, i) => (
+            {services.map((p, i) => (
               <div key={p.id} className={cn("absolute inset-0 flex items-end transition-opacity duration-500 motion-reduce:transition-none", i === active ? "opacity-100" : "opacity-0")}>
-                <Building kind={KIND[p.id]} active className="max-h-full" />
+                <Building kind={kindOf(p.id)} active className="max-h-full" />
               </div>
             ))}
           </div>
@@ -59,18 +54,25 @@ export function ServicesShowcase() {
       </div>
 
       <ol ref={list} className="lg:col-span-7">
-        {pillars.map((p, i) => (
+        {services.map((p, i) => (
           <li key={p.id} data-row={i} className="border-t border-[var(--hairline)] py-14 first:border-t-0 first:pt-0 lg:py-28 lg:first:pt-2">
             <div className="mb-8 flex items-end gap-6 lg:hidden">
-              <Building kind={KIND[p.id]} active className="w-32 text-brass-600" />
+              <Building kind={kindOf(p.id)} active className="w-32 text-brass-600" />
               <span aria-hidden="true" className="font-display text-7xl leading-none text-brass-700">{String(i + 1).padStart(2, "0")}</span>
             </div>
             <h3 className={cn(display.section, "max-w-[12ch]")}>{p.title}</h3>
-            <p className="mt-6 max-w-lg text-lg text-muted">{p.summary}</p>
-            <RuledList items={BULLETS[p.id]} className="mt-8 max-w-xl" />
-            <Link href={p.href} className="link-line mt-8 inline-block font-semibold text-ink-900">
-              {p.cta}
-            </Link>
+            {p.summary ? <p className="mt-6 max-w-lg text-lg text-muted">{p.summary}</p> : null}
+            {p.items.length > 0 ? <RuledList items={p.items.slice(0, 4)} className="mt-8 max-w-xl" /> : null}
+            {safeHref(p.href) && p.cta ? (
+              isExternal(p.href) ? (
+                <a href={p.href} target="_blank" rel="noopener noreferrer" className="link-line mt-8 inline-block font-semibold text-ink-900">
+                  {p.cta}
+                  <span className="sr-only"> (opens in a new tab)</span>
+                </a>
+              ) : (
+                <Link href={p.href} className="link-line mt-8 inline-block font-semibold text-ink-900">{p.cta}</Link>
+              )
+            ) : null}
           </li>
         ))}
       </ol>

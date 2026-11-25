@@ -168,13 +168,24 @@ export type Pillar = {
   cta: string;
 };
 
-export const navLinks = [
+/** The reference site's navigation (maxalley.net/tpm), in its order. */
+export const primaryNav = [
+  { href: "/", label: "Home" },
   { href: "/services", label: "Services" },
+  { href: "/careers", label: "Join Our Team" },
+  { href: "/about", label: "About" },
+  { href: "/spaces", label: "Looking For a Space" },
+  { href: "/newsletter", label: "Newsletter" },
+  { href: "/vendors", label: "Vendors" },
+  { href: "/contact", label: "Contact" },
+] as const;
+
+/** Audience landing pages: in the utility strip, the menu drawer and the footer. */
+export const audienceNav = [
   { href: "/owners", label: "Owners" },
+  { href: "/tenants", label: "Tenants" },
   { href: "/commercial", label: "Commercial" },
   { href: "/lenders", label: "Lenders" },
-  { href: "/tenants", label: "Tenants" },
-  { href: "/about", label: "About" },
 ] as const;
 
 export const pillars: readonly Pillar[] = [

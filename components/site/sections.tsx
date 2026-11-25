@@ -1,6 +1,7 @@
 import type { CSSProperties, ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { Building, type BuildingKind } from "./buildings";
+import { LogoMark } from "./logo";
 
 /* ───────────────────────── Bands (page sections) ───────────────────────── */
 
@@ -221,5 +222,39 @@ export function Faq({ items, className }: { items: readonly { q: string; a: stri
         </details>
       ))}
     </div>
+  );
+}
+
+/* ───────────────────────── Statement band ───────────────────────── */
+
+/**
+ * The reference site's signature: the pit bull mark above a one-line statement, under every page's
+ * opening. Here the mark sits beside the statement, which is set large with a brass underline.
+ */
+export function StatementBand({ children, tone = "travertine" }: { children: ReactNode; tone?: Tone }) {
+  return (
+    <Band tone={tone} className="!py-12 sm:!py-16 lg:!py-20">
+      <div className="flex flex-col items-start gap-6 sm:flex-row sm:items-center sm:gap-10">
+        <LogoMark className="h-20 sm:h-24" />
+        <div>
+          <h2 className="max-w-4xl font-display text-[clamp(2rem,1.2rem+3.2vw,4.25rem)] leading-[1.02] tracking-[-0.02em]">{children}</h2>
+          <span aria-hidden="true" className="mt-5 block h-[5px] w-28 bg-brass-600" />
+        </div>
+      </div>
+    </Band>
+  );
+}
+
+/** Short capability chips as a two-column ruled list (the reference's services lists). */
+export function ChipList({ items, className }: { items: readonly string[]; className?: string }) {
+  return (
+    <ul className={cn("grid border-b border-[var(--hairline)] sm:grid-cols-2 sm:gap-x-10", className)}>
+      {items.map((item) => (
+        <li key={item} className="relative border-t border-[var(--hairline)] py-3 pl-7 leading-snug">
+          <span aria-hidden="true" className="absolute left-0 top-[1.4rem] h-px w-4 bg-brass-600 [.on-dark_&]:bg-brass-300" />
+          {item}
+        </li>
+      ))}
+    </ul>
   );
 }

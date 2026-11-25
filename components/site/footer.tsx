@@ -1,10 +1,13 @@
 import Link from "next/link";
 import { House } from "lucide-react";
-import { navLinks, siteConfig } from "@/lib/site";
+import { NewsletterForm } from "@/components/forms/newsletter-form";
+import { getContent } from "@/lib/cms/content";
+import { audienceNav, primaryNav } from "@/lib/site";
 import { Logo } from "./logo";
 
-export function Footer() {
-  const links = [...navLinks, { href: "/contact", label: "Contact" }, { href: "/vendors", label: "Vendors" }, { href: "/portal", label: "Portal login" }];
+export async function Footer() {
+  const { site } = await getContent();
+  const links = [...primaryNav, ...audienceNav, { href: "/portal", label: "Portal login" }];
   return (
     <footer className="on-dark drawing-grid bg-ink-950 text-limestone">
       <div className="container-page relative pb-8 pt-20 sm:pt-28">
@@ -14,44 +17,63 @@ export function Footer() {
           your property.
         </p>
 
-        <div className="mt-12 grid gap-10 lg:grid-cols-12">
-          <div className="lg:col-span-5">
-            <a href={siteConfig.phoneHref} className="link-line block font-display text-[clamp(2.2rem,1.6rem+2.4vw,3.5rem)] leading-none">
-              {siteConfig.phone}
+        <div className="mt-12 grid gap-12 lg:grid-cols-12">
+          <div className="lg:col-span-4">
+            <a href={site.phoneHref} className="link-line block font-display text-[clamp(2.2rem,1.6rem+2.4vw,3.5rem)] leading-none">
+              {site.phone}
             </a>
-            <a href={`mailto:${siteConfig.email}`} className="link-line mt-3 inline-block text-lg text-sand">
-              {siteConfig.email}
+            <a href={`mailto:${site.email}`} className="link-line mt-3 inline-block text-lg text-sand">
+              {site.email}
             </a>
+            <p className="mt-8 max-w-sm text-sand">
+              Our geographic focus includes {site.areasPhrase}. Our goal is to provide exceptional customer service along with a complete customer package designed to meet your needs and enhance asset values.
+            </p>
           </div>
-          <address className="not-italic text-sand lg:col-span-4 lg:col-start-7">
-            <span className="block font-semibold text-limestone">{siteConfig.legalName}</span>
-            {siteConfig.officeLine ? <span className="block">Office: {siteConfig.officeLine}</span> : null}
-            <span className="block">{siteConfig.officeLine ? "Mail: " : ""}{siteConfig.mailingLine}</span>
-            <span className="mt-3 block">Serving {siteConfig.areasPhrase}.</span>
-            {siteConfig.serviceAreaDetail ? <span className="block">{siteConfig.serviceAreaDetail}</span> : null}
-          </address>
-          {siteConfig.licenses.length > 0 ? (
-            <ul className="space-y-1 text-sm text-sand lg:col-span-3">
-              {siteConfig.licenses.map((l) => (
-                <li key={`${l.state}-${l.number}`}>
-                  {l.verifyUrl ? (
-                    <a href={l.verifyUrl} target="_blank" rel="noopener noreferrer" className="link-line">
-                      {l.label}
-                      <span className="sr-only"> (opens in a new tab)</span>
-                    </a>
-                  ) : (
-                    l.label
-                  )}
-                </li>
-              ))}
-            </ul>
-          ) : null}
+
+          <div className="space-y-8 lg:col-span-3 lg:col-start-6">
+            <address className="not-italic text-sand">
+              <span className="block font-semibold text-limestone">{site.legalName}</span>
+              {site.officeLine ? <span className="block">Office: {site.officeLine}</span> : null}
+              <span className="block">{site.officeLine ? "Mail: " : ""}{site.mailingLine}</span>
+              {site.serviceAreaDetail ? <span className="mt-3 block">{site.serviceAreaDetail}</span> : null}
+            </address>
+            {site.hours ? (
+              <p className="text-sand">
+                <span className="block font-semibold text-limestone">Office hours</span>
+                {site.hours}
+              </p>
+            ) : null}
+            {site.licenses.length > 0 ? (
+              <ul className="space-y-1 text-sm text-sand">
+                {site.licenses.map((l) => (
+                  <li key={`${l.state}-${l.number}`}>
+                    {l.verifyUrl ? (
+                      <a href={l.verifyUrl} target="_blank" rel="noopener noreferrer" className="link-line">
+                        {l.label}
+                        <span className="sr-only"> (opens in a new tab)</span>
+                      </a>
+                    ) : (
+                      l.label
+                    )}
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+          </div>
+
+          <section aria-labelledby="newsletter-h" className="lg:col-span-4 lg:col-start-9">
+            <div className="sheet on-light p-6 sm:p-8">
+              <h2 id="newsletter-h" className="font-display text-4xl leading-none">
+                Newsletter
+              </h2>
+              <p className="mb-6 mt-3 text-muted">Want to be notified when we publish a new article or an update? Sign up, and we&rsquo;ll send a notification by email.</p>
+              <NewsletterForm compact />
+            </div>
+          </section>
         </div>
 
         <div className="mt-16 flex flex-col gap-6 border-t border-[var(--hairline)] pt-6 lg:flex-row lg:items-center lg:justify-between">
-          <div className="flex items-center gap-4">
-            <Logo tone="dark" className="[&_svg]:size-8" />
-          </div>
+          <Logo tone="dark" />
           <nav aria-label="Footer">
             <ul className="flex flex-wrap gap-x-6 gap-y-2 text-[0.9375rem]">
               {links.map((l) => (
@@ -68,7 +90,7 @@ export function Footer() {
           <p className="flex items-center gap-2">
             <House aria-hidden="true" className="size-4 shrink-0 text-brass-300" />
             <span>
-              Equal Housing Opportunity. © {new Date().getFullYear()} {siteConfig.legalName}.
+              Equal Housing Opportunity. © {new Date().getFullYear()} {site.legalName}.
             </span>
           </p>
           <ul className="flex flex-wrap gap-x-5 gap-y-1">

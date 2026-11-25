@@ -63,3 +63,6 @@ Thumbs.db
 
 # scratch
 /tmp
+
+# local admin content store (see lib/cms-storage.ts)
+/data/

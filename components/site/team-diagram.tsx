@@ -65,7 +65,7 @@ export function TeamDiagram() {
         </ul>
         <div className="mx-4"><Connectors count={clients.length} side="left" /></div>
         <div className="flex flex-col items-center justify-center self-center rounded-full border-2 border-gold bg-navy-900 p-7 text-center">
-          <LogoGlyph tone="dark" className="size-14" />
+          <LogoGlyph tone="dark" className="h-16" />
           <span className="mt-3 text-lg font-extrabold leading-tight text-white">Total Property<br />Management</span>
         </div>
         <div className="mx-4"><Connectors count={functions.length} side="right" /></div>

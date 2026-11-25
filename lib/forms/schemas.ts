@@ -139,6 +139,13 @@ export const vendorSchema = z.object({
   message: optionalText(1500),
 });
 
+/** Email is all we need; a name is welcome but optional. */
+export const newsletterSchema = z.object({
+  email,
+  name: optionalText(100),
+  consent: z.preprocess(toBool, z.boolean().refine((v) => v, "Please tick the box so we know you want the newsletter.")),
+});
+
 export type RentalAnalysisInput = z.infer<typeof rentalAnalysisSchema>;
 export type ContactInput = z.infer<typeof contactSchema>;
 export type MaintenanceInput = z.infer<typeof maintenanceSchema>;

@@ -1,4 +1,4 @@
-import { siteConfig } from "./site";
+import { siteConfig, type Site } from "./site";
 
 export type PortalUrls = { owner?: string; tenant?: string; payment?: string };
 
@@ -29,4 +29,9 @@ export function portalUrls(source: Source = siteConfig.portals): PortalUrls {
   if (tenant) out.tenant = tenant;
   if (payment) out.payment = payment;
   return out;
+}
+
+/** Portal links from the merged (live) site details. */
+export function portalUrlsFor(site: Pick<Site, "portals">): PortalUrls {
+  return portalUrls(site.portals);
 }

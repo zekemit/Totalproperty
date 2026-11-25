@@ -15,7 +15,8 @@ const csp = [
   "default-src 'self'",
   `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""} https://challenges.cloudflare.com`,
   "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' data: blob:",
+  // https: lets the picture links Rafi pastes into /admin load. Images can't run script, so this is a small widening.
+  "img-src 'self' data: blob: https:",
   "font-src 'self' data:",
   "connect-src 'self' https://challenges.cloudflare.com",
   "frame-src https://challenges.cloudflare.com",
@@ -47,7 +48,24 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   images: { formats: ["image/avif", "image/webp"] },
   async headers() {
-    return [{ source: "/:path*", headers: securityHeaders }];
+    return [
+      { source: "/:path*", headers: securityHeaders },
+      // The editor and its API are never indexable and never cached, whatever ALLOW_INDEXING says.
+      {
+        source: "/admin/:path*",
+        headers: [
+          { key: "X-Robots-Tag", value: "noindex, nofollow, noarchive" },
+          { key: "Cache-Control", value: "no-store, max-age=0" },
+        ],
+      },
+      {
+        source: "/api/admin/:path*",
+        headers: [
+          { key: "X-Robots-Tag", value: "noindex, nofollow, noarchive" },
+          { key: "Cache-Control", value: "no-store, max-age=0" },
+        ],
+      },
+    ];
   },
   async redirects() {
     // Legacy PHP URLs from the 2009-era site. Permanent so inbound links and
@@ -57,6 +75,13 @@ const nextConfig: NextConfig = {
       { source: "/aboutus.php", destination: "/about", permanent: true },
       { source: "/services.php", destination: "/services", permanent: true },
       { source: "/contactus.php", destination: "/contact", permanent: true },
+      // The maxalley.net/tpm reference draft's URLs and nav names.
+      { source: "/about.php", destination: "/about", permanent: true },
+      { source: "/team", destination: "/careers", permanent: true },
+      { source: "/team.php", destination: "/careers", permanent: true },
+      { source: "/space", destination: "/spaces", permanent: true },
+      { source: "/looking-for-a-space", destination: "/spaces", permanent: true },
+      { source: "/admin.php", destination: "/admin", permanent: true },
     ];
   },
 };

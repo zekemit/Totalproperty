@@ -33,3 +33,7 @@ export async function submitMaintenance(_prev: FormState, formData: FormData): P
 export async function submitVendor(_prev: FormState, formData: FormData): Promise<FormState> {
   return handle("vendor", formData);
 }
+
+export async function submitNewsletter(_prev: FormState, formData: FormData): Promise<FormState> {
+  return handle("newsletter", formData);
+}

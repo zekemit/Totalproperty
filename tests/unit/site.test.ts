@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { siteConfig as raw } from "@config/site";
 import type { SiteConfig } from "@config/types";
-import { absoluteUrl, deriveSite, navLinks, pillars, serviceAreas, siteConfig, validateSiteConfig } from "@/lib/site";
+import { absoluteUrl, deriveSite, primaryNav, pillars, serviceAreas, siteConfig, validateSiteConfig } from "@/lib/site";
 import { portalUrls } from "@/lib/portals";
 
 const clone = (): SiteConfig => structuredClone(raw);
@@ -58,8 +58,8 @@ describe("shipped config (blank pending fields)", () => {
   });
 
   it("nav links are internal and unique", () => {
-    for (const l of navLinks) expect(l.href.startsWith("/")).toBe(true);
-    expect(new Set(navLinks.map((l) => l.href)).size).toBe(navLinks.length);
+    for (const l of primaryNav) expect(l.href.startsWith("/")).toBe(true);
+    expect(new Set(primaryNav.map((l) => l.href)).size).toBe(primaryNav.length);
   });
 });
 

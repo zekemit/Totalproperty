@@ -102,6 +102,14 @@
   .on-dark :focus-visible {
     outline-color: var(--color-brass-300);
   }
+  /* A light sheet sitting inside a dark band (e.g. the footer newsletter form). */
+  .on-light {
+    --hairline: rgb(21 27 37 / 0.2);
+    color: var(--color-text);
+  }
+  .on-light :focus-visible {
+    outline-color: var(--color-ink-900);
+  }
 }
 
 @layer components {
@@ -218,6 +226,11 @@
   }
   .link-line:hover {
     background-size: 100% 3px;
+  }
+  /* The current page in the primary nav keeps a brass underline. */
+  .link-line-current {
+    background-image: linear-gradient(var(--color-brass-700), var(--color-brass-700));
+    background-size: 100% 2px;
   }
 
   .prose-block > * + * {
@@ -353,9 +366,14 @@
 }
 
 /* Motion: one orchestrated hero moment plus responses to touch. Reduced motion shows the final state. */
+/* Headline lines always stack, whether or not they animate (short titles would otherwise share a row). */
+.rise-line,
+.rise-line > span {
+  display: block;
+}
+
 @media (prefers-reduced-motion: no-preference) {
   .rise-line {
-    display: block;
     overflow: hidden;
     padding-bottom: 0.14em;
     margin-bottom: -0.14em;

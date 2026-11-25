@@ -32,6 +32,7 @@ const TITLES: Record<FormKind, string> = {
   contact: "New website inquiry",
   maintenance: "Maintenance request",
   vendor: "New vendor inquiry",
+  newsletter: "New newsletter signup",
 };
 
 export function escapeHtml(value: string): string {

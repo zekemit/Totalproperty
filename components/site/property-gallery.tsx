@@ -1,6 +1,6 @@
 import Image from "next/image";
 import { Band, SectionTitle } from "./sections";
-import { siteConfig } from "@/lib/site";
+import { getContent } from "@/lib/cms/content";
 import { cn } from "@/lib/utils";
 
 /** Column spans and aspect ratios cycle so the grid stays ragged on a shared top edge. */
@@ -8,8 +8,8 @@ const SPANS = ["lg:col-span-6", "lg:col-span-3", "lg:col-span-3"] as const;
 const ASPECTS = ["aspect-[3/2]", "aspect-[3/4]", "aspect-[4/5]"] as const;
 
 /** Photos from `propertyPhotos` in src/config/site.ts. Renders nothing until one is supplied. */
-export function PropertyGallery() {
-  const photos = siteConfig.propertyPhotos;
+export async function PropertyGallery() {
+  const photos = (await getContent()).site.propertyPhotos;
   if (photos.length === 0) return null;
   return (
     <Band labelledBy="gallery-h">

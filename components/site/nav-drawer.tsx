@@ -15,12 +15,15 @@ type Item = { href: string; label: string; external?: boolean };
  */
 export function NavDrawer({
   links,
+  moreLinks,
   portalLinks,
   phone,
   phoneHref,
   email,
 }: {
   links: Item[];
+  /** Secondary routes (the audience pages), shown smaller under the main list. */
+  moreLinks: Item[];
   portalLinks: Item[];
   phone: string;
   phoneHref: string;
@@ -57,7 +60,7 @@ export function NavDrawer({
   }, [pathname]);
 
   return (
-    <div className="lg:hidden">
+    <div className="xl:hidden">
       <button
         type="button"
         onClick={openDrawer}
@@ -95,16 +98,23 @@ export function NavDrawer({
             <ul>
               {links.map((l, i) => (
                 <li key={l.href} className="drawer-link border-t border-[var(--hairline)]" style={{ "--i": i } as React.CSSProperties}>
-                  <Link href={l.href} onClick={closeDrawer} className="block py-3 font-display text-[clamp(2.6rem,11vw,4.5rem)] leading-none">
+                  <Link href={l.href} onClick={closeDrawer} className="block py-2.5 font-display text-[clamp(2rem,8.5vw,3.5rem)] leading-none">
                     {l.label}
                   </Link>
+                </li>
+              ))}
+            </ul>
+            <ul className="drawer-link mt-6 flex flex-wrap gap-x-6 gap-y-2 text-lg" style={{ "--i": links.length } as React.CSSProperties}>
+              {moreLinks.map((l) => (
+                <li key={l.href}>
+                  <Link href={l.href} onClick={closeDrawer} className="link-line text-sand">{l.label}</Link>
                 </li>
               ))}
             </ul>
           </nav>
 
           <div className="container-page relative pb-10 pt-8">
-            <div className="drawer-link flex flex-wrap gap-3" style={{ "--i": links.length } as React.CSSProperties}>
+            <div className="drawer-link flex flex-wrap gap-3" style={{ "--i": links.length + 1 } as React.CSSProperties}>
               {portalLinks.map((p) => (
                 <Button key={p.label} asChild variant="outline-light" size="sm">
                   {p.external ? (
@@ -121,7 +131,7 @@ export function NavDrawer({
                 <Link href="/owners#analysis" onClick={closeDrawer}>Free rental analysis</Link>
               </Button>
             </div>
-            <p className="drawer-link mt-6 text-lg" style={{ "--i": links.length + 1 } as React.CSSProperties}>
+            <p className="drawer-link mt-6 text-lg" style={{ "--i": links.length + 2 } as React.CSSProperties}>
               <a href={phoneHref} className="link-line font-semibold">{phone}</a>
               <br />
               <a href={`mailto:${email}`} className="link-line text-sand">{email}</a>

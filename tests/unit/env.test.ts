@@ -41,7 +41,7 @@ describe("robots and sitemap", () => {
   });
   it("allows crawling and lists routes once indexing is on", () => {
     const r = buildRobots(true, "https://x.test");
-    expect(r.rules).toEqual([{ userAgent: "*", allow: "/" }]);
+    expect(r.rules).toEqual([{ userAgent: "*", allow: "/", disallow: ["/admin", "/api/admin"] }]);
     expect(r.sitemap).toBe("https://x.test/sitemap.xml");
     expect(buildSitemap(true, "https://x.test", routes).map((e) => e.url)).toEqual(["https://x.test/", "https://x.test/owners"]);
   });

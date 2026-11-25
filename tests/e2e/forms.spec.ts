@@ -65,7 +65,7 @@ test.describe("contact form", () => {
 
   test("the honeypot is invisible to people and assistive tech", async ({ page }) => {
     await page.goto("/contact", { waitUntil: "networkidle" });
-    const honeypot = page.locator('input[name="reference_code"]');
+    const honeypot = page.locator('main input[name="reference_code"]');
     await expect(honeypot).toHaveAttribute("tabindex", "-1");
     expect(await honeypot.evaluate((el) => el.closest('[aria-hidden="true"]') !== null)).toBe(true);
     // Parked far off-screen and clipped: nobody can see or click it.

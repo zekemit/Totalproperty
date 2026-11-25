@@ -11,8 +11,9 @@ test.describe("mobile menu drawer", () => {
     const dialog = page.getByRole("dialog", { name: "Site menu" });
     await expect(dialog).toBeVisible();
     await expect(trigger).toHaveAttribute("aria-expanded", "true");
-    await expect(dialog.getByRole("link", { name: "Commercial" })).toBeVisible();
-    await expect(dialog.getByRole("link", { name: "Contact" })).toBeVisible();
+    for (const name of ["Home", "Services", "Join Our Team", "About", "Looking For a Space", "Newsletter", "Vendors", "Contact", "Commercial"]) {
+      await expect(dialog.getByRole("link", { name, exact: true })).toBeVisible();
+    }
     expect(await page.evaluate(() => getComputedStyle(document.documentElement).overflow)).toBe("hidden");
     await page.keyboard.press("Escape");
     await expect(dialog).toBeHidden();
@@ -23,7 +24,7 @@ test.describe("mobile menu drawer", () => {
   test("following a link closes the drawer and navigates", async ({ page }) => {
     await page.goto("/", { waitUntil: "networkidle" });
     await page.getByRole("button", { name: "Menu" }).click();
-    await page.getByRole("dialog", { name: "Site menu" }).getByRole("link", { name: "Owners" }).click();
+    await page.getByRole("dialog", { name: "Site menu" }).getByRole("link", { name: "Owners", exact: true }).click();
     await expect(page).toHaveURL(/\/owners$/);
     await expect(page.getByRole("dialog", { name: "Site menu" })).toBeHidden();
   });
@@ -56,11 +57,11 @@ test.describe("services showcase", () => {
 
   test("the pinned drawing follows the row in view", async ({ page }) => {
     await page.goto("/", { waitUntil: "networkidle" });
-    const panel = page.locator("div.sticky").filter({ hasText: "Residential Property Management" });
+    const panel = page.locator("div.sticky").filter({ hasText: "Landlord Services" });
     await expect(panel).toBeVisible();
-    await page.getByRole("heading", { name: "Construction Management" }).scrollIntoViewIfNeeded();
-    await page.getByRole("heading", { name: "Construction Management" }).evaluate((el) => el.scrollIntoView({ block: "center" }));
-    await expect(page.locator("div.sticky").getByText("Construction Management")).toBeVisible();
+    const row = page.getByRole("heading", { level: 3, name: "Commercial Construction Services" });
+    await row.evaluate((el) => el.scrollIntoView({ block: "center" }));
+    await expect(page.locator("div.sticky").getByText("Commercial Construction Services")).toBeVisible();
     await expect(page.locator("div.sticky").getByText("03", { exact: true })).toBeVisible();
   });
 });
@@ -68,5 +69,5 @@ test.describe("services showcase", () => {
 test("every page has exactly one landmark main and a visible skip target", async ({ page }) => {
   await page.goto("/owners", { waitUntil: "networkidle" });
   await expect(page.locator("main")).toHaveCount(1);
-  await expect(page.locator("h1")).toContainText("See what your rental should be earning.");
+  await expect(page.locator("h1")).toContainText("Rental property management and a free rental analysis.");
 });

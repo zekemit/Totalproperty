@@ -1,12 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
-import { AttributionCapture } from "@/components/forms/attribution";
-import { Footer } from "@/components/site/footer";
-import { Header } from "@/components/site/header";
-import { JsonLd } from "@/components/site/json-ld";
+import { getContent } from "@/lib/cms/content";
 import { indexingAllowed } from "@/lib/env";
-import { serviceAreas, siteConfig } from "@/lib/site";
 
 /**
  * Fonts are self-hosted from the @fontsource packages (no request to Google at build or
@@ -47,69 +43,30 @@ const instrumentSans = localFont({
   adjustFontFallback: "Arial",
 });
 
-export const metadata: Metadata = {
-  metadataBase: new URL(siteConfig.url),
-  title: { default: `${siteConfig.name} | ${siteConfig.areasPhraseAmp}`, template: `%s | ${siteConfig.name}` },
-  description: siteConfig.description,
-  applicationName: siteConfig.name,
-  alternates: { canonical: "/" },
-  openGraph: {
-    type: "website",
-    siteName: siteConfig.name,
-    title: siteConfig.name,
-    description: siteConfig.description,
-    url: "/",
-    locale: "en_US",
-  },
-  twitter: { card: "summary_large_image", title: siteConfig.name, description: siteConfig.description },
-  // Off by default so a preview or staging copy never competes with the live site in
-  // search. Set ALLOW_INDEXING=true when DNS is cut over (see README).
-  robots: indexingAllowed() ? { index: true, follow: true } : { index: false, follow: false },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const { site, seo } = await getContent();
+  const home = seo.pages.home;
+  return {
+    metadataBase: new URL(site.url),
+    title: { default: home.title, template: `%s | ${site.name}` },
+    description: home.description,
+    applicationName: site.name,
+    keywords: seo.keywords,
+    alternates: { canonical: "/" },
+    openGraph: { type: "website", siteName: site.name, title: home.title, description: home.description, url: "/", locale: "en_US" },
+    twitter: { card: "summary_large_image", title: home.title, description: home.description },
+    // Off by default so a preview or staging copy never competes with the live site in
+    // search. Set ALLOW_INDEXING=true when DNS is cut over (see README).
+    robots: indexingAllowed() ? { index: true, follow: true } : { index: false, follow: false },
+  };
+}
 
 export const viewport: Viewport = { themeColor: "#ece6da", width: "device-width", initialScale: 1 };
-
-const organization = {
-  "@context": "https://schema.org",
-  "@type": "ProfessionalService",
-  name: siteConfig.name,
-  url: siteConfig.url,
-  description: siteConfig.description,
-  telephone: siteConfig.phoneHref.replace("tel:", ""),
-  email: siteConfig.email,
-  ...(siteConfig.legalName !== siteConfig.name ? { legalName: siteConfig.legalName } : {}),
-  ...(siteConfig.foundedYear ? { foundingDate: String(siteConfig.foundedYear) } : {}),
-  address: {
-    "@type": "PostalAddress",
-    postOfficeBoxNumber: siteConfig.address.poBox,
-    ...(siteConfig.address.street ? { streetAddress: siteConfig.address.street } : {}),
-    addressLocality: siteConfig.address.locality,
-    addressRegion: siteConfig.address.region,
-    postalCode: siteConfig.address.postalCode,
-    addressCountry: "US",
-  },
-  areaServed: serviceAreas.map((a) => ({ "@type": a.code === "DC" ? "AdministrativeArea" : "State", name: a.name })),
-  knowsAbout: ["Residential property management", "Commercial property management", "CAM management", "Construction management", "REO and foreclosure property services"],
-};
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en" className={`${instrumentSerif.variable} ${instrumentSerifItalic.variable} ${instrumentSans.variable}`}>
-      <body className="flex min-h-dvh flex-col">
-        <a
-          href="#main"
-          className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:bg-ink-900 focus:px-5 focus:py-3 focus:font-semibold focus:text-paper"
-        >
-          Skip to main content
-        </a>
-        <Header />
-        <main id="main" tabIndex={-1} className="flex-1 outline-none">
-          {children}
-        </main>
-        <Footer />
-        <AttributionCapture />
-        <JsonLd data={organization} />
-      </body>
+      <body className="flex min-h-dvh flex-col">{children}</body>
     </html>
   );
 }

@@ -12,4 +12,4 @@ export type FormState = {
 
 export const initialFormState: FormState = { status: "idle" };
 
-export type FormKind = "rental_analysis" | "contact" | "maintenance" | "vendor";
+export type FormKind = "rental_analysis" | "contact" | "maintenance" | "vendor" | "newsletter";

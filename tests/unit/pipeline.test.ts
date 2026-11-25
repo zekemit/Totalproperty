@@ -257,3 +257,37 @@ describe("[review focus 4] partial infrastructure", () => {
     expect(res.message).toMatch(/preview/i);
   });
 });
+
+describe("newsletter signup", () => {
+  const signup = { email: "Reader@Example.com", consent: "on", sourcePath: "/newsletter", fillMs: "9000" };
+
+  it("needs only an email and consent, and is stored as a general contact lead", async () => {
+    const { deps, store, mailer } = makeDeps();
+    const res = await processSubmission(deps, "newsletter", form(signup), ctx);
+    expect(res.status).toBe("success");
+    expect(res.message).toMatch(/subscribing/);
+    const [lead, detail] = store.saveContact.mock.calls[0] as unknown as [Record<string, unknown>, Record<string, unknown>];
+    expect(lead).toMatchObject({ audience: "other", email: "reader@example.com", name: "Newsletter subscriber", consent_contact: true });
+    expect(detail).toMatchObject({ kind: "contact", topic: "general", message: "Newsletter signup." });
+    expect(mailer.send.mock.calls[0]?.[0]).toMatchObject({ replyTo: "reader@example.com" });
+  });
+
+  it("refuses a bad email or a missing consent tick, and keeps first-touch UTM when valid", async () => {
+    const { deps, store } = makeDeps();
+    const bad = await processSubmission(deps, "newsletter", form({ ...signup, email: "nope" }), ctx);
+    expect(bad.status).toBe("error");
+    expect(bad.fieldErrors?.email?.[0]).toMatch(/valid email/);
+    const noConsent = await processSubmission(deps, "newsletter", form({ email: "a@b.co", fillMs: "9000" }), ctx);
+    expect(noConsent.fieldErrors?.consent?.[0]).toMatch(/tick the box/);
+    expect(store.saveContact).not.toHaveBeenCalled();
+    await processSubmission(deps, "newsletter", form({ ...signup, utm_source: "google", utm_campaign: "spring" }), ctx);
+    expect(store.saveContact.mock.calls[0]?.[0]).toMatchObject({ utm_source: "google", utm_campaign: "spring" });
+  });
+
+  it("a bot that fills the honeypot gets the same success and nothing is stored", async () => {
+    const { deps, store } = makeDeps();
+    const res = await processSubmission(deps, "newsletter", form({ ...signup, reference_code: "spam" }), ctx);
+    expect(res.status).toBe("success");
+    expect(store.saveContact).not.toHaveBeenCalled();
+  });
+});

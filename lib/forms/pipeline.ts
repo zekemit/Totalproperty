@@ -1,9 +1,11 @@
 import "server-only";
-import { siteConfig } from "@/lib/site";
+import { getContent } from "@/lib/cms/content";
+import type { Site } from "@/lib/site";
 import { hashIp, verifyTurnstile, type RateLimiter } from "./security";
 import {
   contactSchema,
   maintenanceSchema,
+  newsletterSchema,
   rentalAnalysisSchema,
   toFieldErrors,
   vendorSchema,
@@ -49,13 +51,16 @@ const MESSAGES = {
   contact: "Thank you for reaching out. A member of our team will get back to you.",
   maintenance: "We received your maintenance request and our team will follow up.",
   vendor: "Thank you. We received your information and will follow up with next steps.",
+  newsletter: "Thank you for subscribing. We'll email you when we publish an article or an update.",
 } satisfies Record<FormKind, string>;
 
-const EMERGENCY_NOTE = ` Because you marked this an emergency, please also call us right now at ${siteConfig.emergencyPhone}.`;
-const CONTACT_FALLBACK = `Please call ${siteConfig.phone} or email ${siteConfig.email} and we'll take care of it.`;
+type Contact = Pick<Site, "phone" | "email" | "emergencyPhone">;
 
-function success(kind: FormKind, emergency = false): FormState {
-  return { status: "success", message: MESSAGES[kind] + (emergency ? EMERGENCY_NOTE : "") };
+const emergencyNote = (c: Contact) => ` Because you marked this an emergency, please also call us right now at ${c.emergencyPhone}.`;
+const contactFallback = (c: Contact) => `Please call ${c.phone} or email ${c.email} and we'll take care of it.`;
+
+function success(kind: FormKind, c: Contact, emergency = false): FormState {
+  return { status: "success", message: MESSAGES[kind] + (emergency ? emergencyNote(c) : "") };
 }
 
 /** Fields that are never echoed back to the browser. */
@@ -221,6 +226,28 @@ function prepare(kind: FormKind, raw: Record<string, string>): Parsed {
     };
   }
 
+  if (kind === "newsletter") {
+    const r = newsletterSchema.safeParse(raw);
+    if (!r.success) return { ok: false, errors: toFieldErrors(r.error) };
+    const d = r.data;
+    // Stored as a general contact submission so no database change is needed; the message marks it.
+    const detail: ContactInsert = { kind: "contact", topic: "general", message: "Newsletter signup." };
+    return {
+      ok: true,
+      prepared: {
+        audience: "other",
+        save: (store, lead) => store.saveContact(lead, detail),
+        fields: [
+          ["Email", d.email],
+          ["Name", d.name ?? "—"],
+        ],
+        message: "Please add this address to the newsletter list.",
+        subjectDetail: "Newsletter signup",
+        person: { name: d.name ?? "Newsletter subscriber", email: d.email, consent: d.consent },
+      },
+    };
+  }
+
   const r = vendorSchema.safeParse(raw);
   if (!r.success) return { ok: false, errors: toFieldErrors(r.error) };
   const d = r.data;
@@ -266,17 +293,18 @@ export async function processSubmission(
   ctx: SubmissionContext,
 ): Promise<FormState> {
   const raw = toRecord(form);
+  const { site } = await getContent();
 
-  if (cleanText(raw[HONEYPOT_FIELD] ?? "") !== "") return success(kind);
+  if (cleanText(raw[HONEYPOT_FIELD] ?? "") !== "") return success(kind, site);
 
   // Absent, blank or non-numeric fill time (JavaScript disabled, tampering) is not penalised.
   const fillMs = raw.fillMs?.trim() ? Number(raw.fillMs) : Number.NaN;
-  if (Number.isFinite(fillMs) && fillMs >= 0 && fillMs < MIN_HUMAN_FILL_MS) return success(kind);
+  if (Number.isFinite(fillMs) && fillMs >= 0 && fillMs < MIN_HUMAN_FILL_MS) return success(kind, site);
 
   const limit = deps.limiter.check(ctx.ip);
   if (!limit.ok) {
     return failure(
-      `Too many requests from your connection. Please wait a few minutes and try again, or call us at ${siteConfig.phone}.`,
+      `Too many requests from your connection. Please wait a few minutes and try again, or call us at ${site.phone}.`,
       raw,
     );
   }
@@ -337,7 +365,7 @@ export async function processSubmission(
     }
   }
 
-  if (stored || emailed) return success(kind, p.emergency);
+  if (stored || emailed) return success(kind, site, p.emergency);
 
   if (!deps.store && !deps.mailer && !deps.isProduction) {
     console.warn("[lead] no database or email configured; submission validated but not delivered", { kind });
@@ -348,5 +376,5 @@ export async function processSubmission(
   }
 
   console.error("[lead] submission could not be delivered", { kind, configured: { store: !!deps.store, mailer: !!deps.mailer } });
-  return failure(`We couldn't send your request right now. ${CONTACT_FALLBACK}`, raw);
+  return failure(`We couldn't send your request right now. ${contactFallback(site)}`, raw);
 }
