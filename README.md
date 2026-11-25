@@ -76,6 +76,12 @@ The site is designed to be shown to the client on its `*.vercel.app` address **w
 - **Forms work for the demo.** With `FORMS_PREVIEW_MODE=true` and no database or email configured, a valid submission shows a success message labelled "Preview mode: nothing was stored or sent". Once real delivery is configured this switch does nothing.
 - **DNS is untouched.** The custom domain is not attached to the Vercel project.
 
+**Current preview:** https://totalproperty.vercel.app (Vercel project `totalproperty`, linked to `zekemit/Totalproperty`, production branch `main`). Pushing to `main` redeploys it. The custom domain `totalproperty.us` is **not** attached, and DNS is unchanged.
+
+Vercel settings applied to the project: framework Next.js, Node 22, system environment variables exposed (so the canonical URL follows the Vercel address), `FORMS_PREVIEW_MODE=true`, and **Vercel Authentication turned off** so the link opens without a Vercel login. The site holds no private data and is blocked from search, but anyone with the link can view it; re-enable protection under Project Settings, Deployment Protection if you want it private. The account is on Vercel's Hobby plan, which is limited to personal, non-commercial use, so move the project to a paid plan before it serves the live business site.
+
+**GitHub default branch:** `main` exists and matches the working branch, but GitHub still lists the branch pushed first (`claude/ecstatic-mccarthy-wzjy4n`) as the repository default. Switch it to `main` in GitHub: Settings, Branches, Default branch.
+
 **At launch**, set `NEXT_PUBLIC_SITE_URL=https://totalproperty.us`, `ALLOW_INDEXING=true`, remove `FORMS_PREVIEW_MODE`, configure the delivery variables, then follow section 12.
 
 ---
