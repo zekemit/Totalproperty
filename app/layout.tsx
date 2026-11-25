@@ -1,12 +1,34 @@
 import type { Metadata, Viewport } from "next";
-import "@fontsource-variable/manrope";
-import "@fontsource-variable/source-serif-4";
+import localFont from "next/font/local";
 import "./globals.css";
 import { AttributionCapture } from "@/components/forms/attribution";
 import { Footer } from "@/components/site/footer";
 import { Header } from "@/components/site/header";
 import { JsonLd } from "@/components/site/json-ld";
 import { serviceAreas, siteConfig } from "@/lib/site";
+
+/**
+ * Fonts are self-hosted from the @fontsource-variable packages (no request to Google
+ * at build or run time). `next/font/local` preloads the Latin subset and generates a
+ * size-adjusted fallback so the swap from system font to web font doesn't shift layout.
+ */
+const manrope = localFont({
+  src: "../node_modules/@fontsource-variable/manrope/files/manrope-latin-wght-normal.woff2",
+  weight: "200 800",
+  variable: "--font-manrope",
+  display: "swap",
+  fallback: ["ui-sans-serif", "system-ui", "-apple-system", "Segoe UI", "Roboto", "sans-serif"],
+  adjustFontFallback: "Arial",
+});
+
+const sourceSerif = localFont({
+  src: "../node_modules/@fontsource-variable/source-serif-4/files/source-serif-4-latin-wght-normal.woff2",
+  weight: "200 900",
+  variable: "--font-source-serif",
+  display: "swap",
+  fallback: ["ui-serif", "Georgia", "Times New Roman", "serif"],
+  adjustFontFallback: "Times New Roman",
+});
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteConfig.url),
@@ -50,7 +72,7 @@ const organization = {
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en">
+    <html lang="en" className={`${manrope.variable} ${sourceSerif.variable}`}>
       <body className="flex min-h-dvh flex-col">
         <a
           href="#main"

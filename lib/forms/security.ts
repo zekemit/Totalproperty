@@ -1,3 +1,4 @@
+import "server-only";
 import { createHmac } from "node:crypto";
 
 export { cleanText } from "./text";

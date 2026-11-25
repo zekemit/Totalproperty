@@ -1,3 +1,4 @@
+import "server-only";
 import type { FetchLike } from "./security";
 import type { FormKind } from "./state";
 

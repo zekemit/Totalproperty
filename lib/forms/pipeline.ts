@@ -1,3 +1,4 @@
+import "server-only";
 import { siteConfig } from "@/lib/site";
 import { hashIp, verifyTurnstile, type RateLimiter } from "./security";
 import {

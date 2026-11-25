@@ -1,0 +1,262 @@
+# Total Property Management — totalproperty.us
+
+Marketing site and lead-conversion engine for Total Property Management (Purcellville, VA; serving Virginia, Maryland, Pennsylvania and DC).
+
+- **Strategy and research:** [`TOTAL_PROPERTY_AUDIT.md`](./TOTAL_PROPERTY_AUDIT.md), [`MASTER_TRANSFORMATION_PLAN.md`](./MASTER_TRANSFORMATION_PLAN.md)
+- **Implementation plan for this build:** [`docs/superpowers/plans/2026-11-25-phase1-marketing-site.md`](./docs/superpowers/plans/2026-11-25-phase1-marketing-site.md)
+
+**Scope (hybrid architecture).** This repository contains the public site, the lead pipeline and the database for inbound requests. It deliberately does **not** collect rent, hold tenant ledgers or do owner accounting; those run on a property-management platform, and the site links out to it (see [Portal and payment links](#portal-and-payment-links)). The lender/REO tracking module is a later phase.
+
+---
+
+## 1. Quick start
+
+Prerequisites: Node.js 20.9+ (developed on 22), npm 10+.
+
+```bash
+npm install
+cp .env.example .env.local     # every value is optional for local development
+npm run dev                    # http://localhost:3000
+```
+
+With no environment variables set, the site runs and the forms validate. In development a valid submission succeeds with an explicit "Development mode" notice and nothing is stored or sent. **In production with nothing configured, forms return an honest error that gives the phone number and email; they never pretend to succeed.**
+
+| Command | What it does |
+|---|---|
+| `npm run dev` | Development server |
+| `npm run build` / `npm start` | Production build / serve it |
+| `npm run typecheck` | `tsc --noEmit` (strict) |
+| `npm run lint` | ESLint (Next.js core-web-vitals + TypeScript rules) |
+| `npm test` | Vitest unit tests (97) |
+| `npm run check` | typecheck + lint + unit tests |
+| `npm run test:e2e` | Playwright end-to-end + axe accessibility audit (builds and serves a fresh copy) |
+
+### End-to-end tests
+
+Playwright launches Chromium. If your machine already has one (for example a CI image), point to it instead of downloading another:
+
+```bash
+PLAYWRIGHT_CHROMIUM_EXECUTABLE=/path/to/chromium npm run test:e2e
+```
+
+The suite covers 13 pages at desktop and phone widths: exactly one `<h1>`, no console errors, no horizontal scroll, **zero axe violations for WCAG 2.0/2.1/2.2 A and AA**, skip link, legacy redirects, security headers, sitemap/robots, the 404, the vacancy estimator, form validation, and the honest-failure path.
+
+---
+
+## 2. Project layout
+
+```
+app/                    Routes (one folder per page), layout, metadata, sitemap, robots, OG image
+  actions.ts            Server Actions: thin wrappers around the pipeline
+components/
+  ui/                   Button, inputs (shadcn-style primitives)
+  forms/                FormShell + the four forms + vacancy estimator
+  site/                 Header, mobile nav, footer, logo, sections, team diagram
+lib/
+  site.ts               Verified company facts, nav, pillars  ← edit facts here
+  catalog.ts            Service catalogue copy (from the company's own services page)
+  portals.ts            Portal/payment outbound links from env (server-only)
+  calc/vacancy.ts       Vacancy arithmetic (no market data)
+  forms/                schemas, security, pipeline, mailer, store, runtime
+  supabase/             Admin client (server-only) and database types
+supabase/migrations/    SQL schema + RLS
+tests/unit, tests/e2e   Vitest, Playwright + axe
+```
+
+---
+
+## 3. Environment variables
+
+Copy `.env.example`. **Everything is server-only unless it starts with `NEXT_PUBLIC_`.** A build check confirms no secret name appears in any client-delivered file.
+
+| Variable | Scope | Purpose |
+|---|---|---|
+| `NEXT_PUBLIC_SITE_URL` | public | Canonical origin (sitemap, canonical URLs, OG, JSON-LD). Default `https://totalproperty.us` |
+| `NEXT_PUBLIC_TURNSTILE_SITE_KEY` | public | Cloudflare Turnstile site key (public by design) |
+| `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` | server | Lead storage. The service role bypasses RLS; it is only read in `lib/supabase/admin.ts` (`server-only`) |
+| `RESEND_API_KEY`, `EMAIL_FROM`, `LEAD_NOTIFY_TO` | server | Staff notification email (comma-separated recipients; default `info@totalproperty.us`) |
+| `TURNSTILE_SECRET_KEY` | server | If set, every form requires a valid Turnstile token. **Set the site key too, or no one can submit.** |
+| `IP_HASH_SECRET` | server | HMAC key for hashing IPs before storage (`openssl rand -hex 32`). Unset = no IP data stored |
+| `OWNER_PORTAL_URL`, `TENANT_PORTAL_URL`, `TENANT_PAYMENT_URL` | server | Outbound https links to the PM platform. Unset = pages show contact instructions. Baked at build time: redeploy after changing |
+
+Delivery rules (tested): a submission succeeds if **at least one** of storage or email received it; if both are configured and both fail, or neither is configured in production, the visitor sees a clear error with the phone and email.
+
+---
+
+## 4. Database and migrations
+
+Schema: `leads` (person, consent, attribution, status), `rental_analysis` (owner requests), `contact_submissions` (contact, maintenance, vendor). Row-level security is **enabled with no policies** and all privileges are revoked from `anon`/`authenticated`: the browser can never read or write these tables; only server code using the service-role key can. CHECK constraints mirror the Zod rules.
+
+The migration was tested against Postgres 16: browser roles are denied (6 checks), 12 constraint cases reject bad data, 6 valid rows are accepted, and deleting a lead cascades to its detail rows.
+
+**Apply (Supabase CLI):**
+
+```bash
+npm i -D supabase               # or: brew install supabase/tap/supabase
+npx supabase login
+npx supabase link --project-ref <your-project-ref>
+npx supabase db push            # applies supabase/migrations/*.sql
+```
+
+**Or** paste `supabase/migrations/20261125000000_lead_capture.sql` into the Supabase dashboard SQL editor.
+
+**Verify after applying** (SQL editor):
+
+```sql
+select relname, relrowsecurity from pg_class
+ where relname in ('leads','rental_analysis','contact_submissions');   -- all true
+select count(*) from pg_policies where schemaname = 'public';          -- 0 (deny by default)
+```
+
+**Types:** `lib/supabase/database.types.ts` is hand-maintained. Once the project is linked, regenerate with
+`npx supabase gen types typescript --project-id <ref> --schema public > lib/supabase/database.types.ts` and keep the exported union aliases at the top.
+
+**Data retention.** These tables hold personal data. Agree a retention period with the client and purge `spam`/`lost` leads on that schedule (the privacy policy currently says "as long as we need them… then delete").
+
+---
+
+## 5. How a form submission is handled
+
+`app/actions.ts` → `lib/forms/pipeline.ts`, in this order:
+
+1. **Honeypot** (`reference_code`) filled → silent success, nothing stored.
+2. **Client-measured fill time** < 800 ms → silent success. (Measured in the browser, not compared to the server clock, and the threshold tolerates browser autofill.)
+3. **Rate limit** (5 / 10 min / IP, in memory).
+4. **Cloudflare Turnstile**, if configured (fails closed).
+5. **Zod validation** server-side; errors return per-field messages **and the values typed**, so a mistake never wipes the form.
+6. **Persist** (lead + detail, rolled back together on failure) and **email** staff. User text is stored as inert plain text and **HTML-escaped in the email**; control and bidi-override characters are stripped.
+
+Notes:
+- The in-memory rate limiter is best-effort on serverless (each instance has its own memory). Add a Vercel Firewall custom rule with a `rate_limit` action for `POST` requests as the authoritative control (Vercel dashboard → Firewall, or `vercel firewall rules add`).
+- Forms need JavaScript; a `<noscript>` notice gives the phone and email.
+- Only a hash of the IP is stored, never the address.
+
+---
+
+## 6. Portal and payment links
+
+Rent collection and tenant/owner accounting are **not** built here. Set the three env vars to the platform's login/payment URLs when it is live. `/tenants`, `/portal` and the header link to them (new tab, announced to screen readers). Until set, those pages say so and show the phone and email.
+
+---
+
+## 7. Design tokens and contrast
+
+Tokens live in `app/globals.css` (`@theme`). Tailwind v4 is CSS-first, so there is no `tailwind.config.ts`. Computed WCAG ratios:
+
+| Pair | Ratio |
+|---|---|
+| Harbor Navy `#12263F` on Alabaster `#F7F6F1` | 14.12:1 |
+| Ink `#23272E` on Alabaster | 13.85:1 |
+| Muted `#4F5762` on Alabaster | 6.76:1 |
+| **Copper accent `#8F5F00`** on Alabaster / on white | **5.10:1** / 5.52:1 |
+| White on Navy-700 `#1D3A5F` | 11.52:1 |
+| Gold `#E2B35A` on Navy-900 `#0B1A2E` (and the reverse, for buttons) | 9.01:1 |
+| Muted-on-dark `#B7C2D0` on Navy-900 | 9.69:1 |
+| Danger `#A3281F` / Success `#1F6B3F` on Alabaster | 6.74:1 / 6.00:1 |
+| Input border `#6F757D` on white (non-text, needs 3:1) | 4.65:1 |
+
+Fonts (Manrope for headings and UI, Source Serif 4 for ledes and quotes) are self-hosted from the `@fontsource-variable` packages through `next/font/local`: preloaded, Latin subset, with a size-adjusted fallback so swapping fonts causes no layout shift.
+
+---
+
+## 8. Quality and security results (this build)
+
+| Check | Result |
+|---|---|
+| Unit tests | 97 passing |
+| Playwright e2e | 94 passing, 6 skipped by design (form submissions run on desktop only to stay inside the rate limit) |
+| axe, WCAG 2.0–2.2 A/AA | 0 violations on every page, desktop and phone |
+| Lighthouse, mobile (simulated slow 4G) | Performance: Home 96 · Owners 97 · Tenants 98 · Contact 95. **Accessibility, Best Practices, SEO: 100 on every page tested** |
+| Lighthouse, desktop (home) | 100 / 100 / 100 / 100 |
+| Core Web Vitals (lab) | CLS 0 on all four pages; LCP 2.2–2.6 s on simulated slow 4G. Home is marginally above the 2.5 s target in the lab; verify with field data (Vercel Speed Insights) after launch |
+| `npm audit` | 0 vulnerabilities (production and all dependencies) |
+| Secrets in client bundle | None (searched `.next/static` for every secret name) |
+| Images | No raster images are shipped (SVG icon, generated OG image), so there is nothing to compress. Add real photos through `next/image` (AVIF/WebP is enabled) |
+
+Security headers (every route): CSP (`frame-ancestors 'none'`, `object-src 'none'`, `base-uri 'self'`, `form-action 'self'`; Turnstile is the only third-party origin), `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Referrer-Policy`, `Permissions-Policy`, `Cross-Origin-Opener-Policy`, `Strict-Transport-Security` (no `preload`; joining the browser preload list is a one-way door to decide on later). `X-Powered-By` is removed. The CSP allows `'unsafe-inline'` for scripts because Next.js emits inline bootstrap scripts and a per-request nonce would force every page to render dynamically; the rest of the policy is tight to compensate.
+
+---
+
+## 9. Deployment checklist (Vercel + GitHub)
+
+1. **Import** the GitHub repository in Vercel (framework: Next.js; defaults are correct).
+2. **Set environment variables** (Production and Preview) per section 3. At minimum: `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `RESEND_API_KEY`, `EMAIL_FROM`, `LEAD_NOTIFY_TO`, `IP_HASH_SECRET`, and both Turnstile keys.
+3. **Supabase:** create the project, apply the migration, run the verification SQL (section 4).
+4. **Resend:** verify the sending domain. Resend gives you DNS records to add. Add them as **new records only**; do not edit or replace the existing Microsoft 365 SPF record. If Resend asks for an SPF change on the root domain, merge it into the single existing SPF record instead of adding a second one.
+5. **Turnstile:** create a widget for `totalproperty.us` and set both keys.
+6. **Firewall:** add the `POST` rate-limit rule (section 5).
+7. **Deploy to the preview URL** and run: a test submission of each form (confirm the database row and the email), a keyboard-only pass, a phone check.
+8. **Cut over DNS** only after sign-off (section 10).
+9. **After launch:** add and verify the domain in Google Search Console, submit `/sitemap.xml`, enable Vercel Web Analytics and Speed Insights, and claim the Google Business Profile.
+
+---
+
+## 10. DNS cutover (A and CNAME only)
+
+> **The legacy site is not on Wix.** `totalproperty.us` currently resolves to a managed VPS (`209.142.64.131`, Apache + PHP), and the nameservers are that provider's (`ns1/ns2.cloud-6d7e86.managed-vps.net`). **Email runs on Microsoft 365**, and DNS and web hosting are at the same provider. Changing nameservers, or deleting records wholesale, would break company email.
+
+**Rule: change only the two web records. Leave the nameservers and every mail-related record exactly as they are.**
+
+Before touching anything: export a full copy of the current zone (every record) and keep it.
+
+| Name | Type | Current value (verified) | Action |
+|---|---|---|---|
+| `@` (apex) | **A** | `209.142.64.131` | **Replace** with the A value Vercel shows for the domain |
+| `www` | **A** (currently) | `209.142.64.131` | **Replace** with a **CNAME** to the target Vercel shows for the domain (remove the old A record first; a name cannot be both) |
+| `@` | **MX** | `0 totalproperty-us.mail.protection.outlook.com` | **DO NOT TOUCH** |
+| `@` | TXT (SPF, e.g. `v=spf1 include:spf.protection.outlook.com …`, and any verification TXT) | exists | **DO NOT TOUCH** |
+| `_dmarc` | TXT | if present | **DO NOT TOUCH** |
+| `selector1._domainkey`, `selector2._domainkey` | CNAME (Microsoft DKIM) | if present | **DO NOT TOUCH** |
+| `autodiscover`, `enterpriseregistration`, `enterpriseenrollment`, `lyncdiscover`, `sip` | CNAME / SRV (Microsoft 365) | if present | **DO NOT TOUCH** |
+| `@` | **NS** | `ns1/ns2.cloud-6d7e86.managed-vps.net` | **DO NOT TOUCH** (keep DNS at the current provider) |
+
+**Which values?** Vercel shows the exact A and CNAME targets for your project in **Settings → Domains** after you add `totalproperty.us` and `www.totalproperty.us`; use those. Historically they have been `76.76.21.21` and `cname.vercel-dns.com`, but Vercel now issues per-project values, so copy what the dashboard shows rather than this README. Because DNS stays at the current provider, you add these records in that provider's DNS panel, not with `vercel dns`.
+
+**Procedure**
+
+1. Add both domains to the Vercel project; note the values shown. Set one as primary and let the other redirect.
+2. Lower the TTL on the apex and `www` records to the minimum a day in advance.
+3. Edit the two web records as in the table. Touch nothing else.
+4. Verify: `dig A totalproperty.us +short` and `dig CNAME www.totalproperty.us +short` return Vercel's values; `curl -IL https://totalproperty.us` ends at the primary domain over HTTPS.
+5. **Verify mail immediately:** send mail to and from `info@totalproperty.us`; confirm `dig MX totalproperty.us +short` still returns the Outlook host.
+6. Confirm the legacy URLs redirect (`/index.php`, `/aboutus.php`, `/services.php`, `/contactus.php` → permanent redirects are built in).
+7. Keep the old VPS site available for 30 days before decommissioning.
+
+**Rollback:** restore the two original records (`A 209.142.64.131` for `@` and `www`) from your exported zone.
+
+---
+
+## 11. Launch blockers (need client input)
+
+The site is built so **nothing unverified is claimed**. These fields are empty until the client confirms them, and the pages render those sections only when they are filled (`lib/site.ts`):
+
+| Item | Where | Why it matters |
+|---|---|---|
+| License numbers and verification links | `siteConfig.licenses` | Virginia and DC generally require licensing for managing others' property; Maryland and Pennsylvania should be confirmed with the regulators |
+| Leadership names, titles | `siteConfig.leadership` | About page; the "family-backed" claim stays out until confirmed |
+| Founding year | `siteConfig.foundedYear` | Footer copyright suggests 2009 but that is unconfirmed |
+| Counsel review | `/privacy`, `/accessibility`, `/fair-housing` | Drafted from standard practice, not legal advice |
+| Official Equal Housing Opportunity logo | footer | Text statement used until the asset is supplied |
+| Vector logo | `components/site/logo.tsx`, `app/icon.svg` | Interim mark redrawn from the legacy glyph; commission the final artwork |
+| Photos of managed properties, team, testimonials | not yet used | No stock imagery is used |
+| Service-area detail and Google Business Profile | outside the repo | A PO box is not eligible for a map listing; decide street address or service-area business |
+| PM platform URLs | env vars | Enables portal and rent-payment links |
+
+---
+
+## 12. Decisions and deviations from the brief
+
+| Brief said | What I did | Why |
+|---|---|---|
+| "Approved" palette: Alabaster, Harbor Navy, copper `#8F5F00` | Implemented exactly that | The earlier plan proposed an olive/copper/gold palette; the brief's palette won. Tokens are in one file if you want to revert |
+| `tailwind.config.ts` | Not created | Tailwind v4 is CSS-first (`@theme` in `app/globals.css`); a config file would be a second source of truth |
+| `next.config.js` | `next.config.ts` | Same behavior with type checking |
+| `app/page.php` converted to `page.tsx` | `app/page.tsx` (no such PHP file existed; the legacy pages are `index.php`, `aboutus.php`, `services.php`, `contactus.php`) | Legacy URLs 301 to the new routes |
+| Wix/DNS cutover table | Table is for the real legacy host (managed VPS) | Verified by DNS lookup; the site is not on Wix |
+| "Free Rental Analysis interactive calculator" | An intake form plus a **vacancy calculator** that only does arithmetic on the visitor's own numbers | Public rent data for Loudoun conflicted by about 40% across sources, so a market-rent estimate would be a made-up number. A real estimator needs a licensed data source (a later phase) |
+| "Professional company history" on About | About uses the company's own published copy; no history is invented | Nothing verifiable beyond the live site; founding year and leadership appear once supplied |
+| "Online payment gateway placeholders" | Env-driven outbound links; honest fallback text when unset | The plan excludes custom rent collection |
+| Pages listed | Also built `/services`, `/commercial`, `/lenders`, `/portal`, `/privacy`, `/accessibility`, `/fair-housing` | The homepage's four pillars and the forms' consent text need real destinations; housing sites need a fair-housing statement |
+| `leads`, `rental_analysis`, contact submissions tables | Done, plus attribution columns and kind-specific constraints | Maintenance and vendor requests share `contact_submissions` |
+
+Known limits: forms need JavaScript; the in-memory rate limiter is per-instance (use the Firewall rule); home-page mobile LCP is 2.6 s in the slow-4G lab (verify with field data); the lender/REO tracking module and the owner/tenant dashboards are later phases by design.
