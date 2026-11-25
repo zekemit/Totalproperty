@@ -7,8 +7,7 @@ import { siteConfig } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "Commercial property management, CAM and construction",
-  description:
-    "Commercial landlord and tenant services, CAM budget control and construction management for properties in Virginia, Maryland, Pennsylvania and DC.",
+  description: `Commercial landlord and tenant services, CAM budget control and construction management for properties in ${siteConfig.areasPhrase}.`,
   alternates: { canonical: "/commercial" },
 };
 

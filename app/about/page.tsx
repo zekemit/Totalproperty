@@ -1,18 +1,23 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { PropertyGallery } from "@/components/site/property-gallery";
 import { PageHero, Section, SectionHeading } from "@/components/site/sections";
+import { Testimonials } from "@/components/site/testimonials";
 import { serviceAreas, siteConfig } from "@/lib/site";
+
+const countWord = ["no", "one", "two", "three", "four"] as const;
 
 export const metadata: Metadata = {
   title: "About Total Property Management",
-  description:
-    "Total Property Management is a one-stop property management team for owners, landlords, tenants and lenders, based in Purcellville, Virginia and serving VA, MD, PA and DC.",
+  description: `Total Property Management is a one-stop property management team for owners, landlords, tenants and lenders, based in ${siteConfig.place} and serving ${siteConfig.areasPhrase}.`,
   alternates: { canonical: "/about" },
 };
 
 export default function AboutPage() {
-  const { address, leadership, licenses, foundedYear } = siteConfig;
+  const { leadership, licenses, foundedYear } = siteConfig;
+  const n = serviceAreas.length;
   return (
     <>
       <PageHero
@@ -43,14 +48,21 @@ export default function AboutPage() {
       <Section tone="panel" labelledBy="where">
         <div className="grid gap-10 lg:grid-cols-12">
           <div className="lg:col-span-6">
-            <SectionHeading id="where" title="Based in Purcellville, serving four jurisdictions" className="!mb-6" />
+            <SectionHeading id="where" title={`Based in ${siteConfig.address.locality}, serving ${countWord[n] ?? n} ${n === 1 ? "jurisdiction" : "jurisdictions"}`} className="!mb-6" />
             <p className="text-lg">
-              Our office is in Purcellville, in Loudoun County, Virginia. From there we serve properties across {serviceAreas.map((a) => a.name).join(", ").replace(/, ([^,]*)$/, ", and $1")}.
+              {siteConfig.basedInSentence} From here we serve properties across {siteConfig.areasPhrase}.
+              {siteConfig.serviceAreaDetail ? ` ${siteConfig.serviceAreaDetail}.` : ""}
             </p>
             <address className="mt-6 not-italic">
-              <strong className="text-navy-800">{siteConfig.name}</strong>
+              <strong className="text-navy-800">{siteConfig.legalName}</strong>
               <br />
-              Mailing address: {address.poBox}, {address.locality}, {address.region} {address.postalCode}
+              {siteConfig.officeLine ? (
+                <>
+                  Office: {siteConfig.officeLine}
+                  <br />
+                </>
+              ) : null}
+              Mailing address: {siteConfig.mailingLine}
               <br />
               <a href={siteConfig.phoneHref} className="font-bold text-navy-700 underline">{siteConfig.phone}</a>
               <br />
@@ -74,6 +86,9 @@ export default function AboutPage() {
           <ul className="grid gap-6 md:grid-cols-3">
             {leadership.map((l) => (
               <li key={l.name} className="rounded-xl border border-line bg-white p-6">
+                {l.photo ? (
+                  <Image src={l.photo.src} alt={l.photo.alt} width={l.photo.width} height={l.photo.height} sizes="96px" className="mb-4 size-24 rounded-full object-cover" />
+                ) : null}
                 <h3 className="text-xl">{l.name}</h3>
                 <p className="text-copper font-bold">{l.title}</p>
                 {l.bio ? <p className="mt-3">{l.bio}</p> : null}
@@ -88,8 +103,8 @@ export default function AboutPage() {
           <SectionHeading id="licensing" title="Licensing" />
           <ul className="space-y-2">
             {licenses.map((l) => (
-              <li key={`${l.jurisdiction}-${l.number}`}>
-                {l.jurisdiction}: {l.holder ? `${l.holder}, ` : ""}license {l.number}
+              <li key={`${l.state}-${l.number}`}>
+                {l.stateName}: {l.holderName ? `${l.holderName}, ` : ""}{l.label.replace(`${l.stateName} `, "")}
                 {l.verifyUrl ? (
                   <>
                     {" "}
@@ -101,6 +116,9 @@ export default function AboutPage() {
           </ul>
         </Section>
       ) : null}
+
+      <PropertyGallery />
+      <Testimonials tone="default" />
 
       <Section tone="dark" labelledBy="about-cta">
         <div className="flex flex-wrap items-center justify-between gap-6">

@@ -1,5 +1,6 @@
 import "server-only";
 import { isIP } from "node:net";
+import { formsPreviewMode } from "@/lib/env";
 import { getAdminClient } from "@/lib/supabase/admin";
 import { createMailerFromEnv } from "./mailer";
 import type { PipelineDeps } from "./pipeline";
@@ -21,7 +22,8 @@ export function getPipelineDeps(env: Record<string, string | undefined> = proces
     turnstileSecret: env.TURNSTILE_SECRET_KEY?.trim() || undefined,
     ipHashSecret: env.IP_HASH_SECRET?.trim() || undefined,
     now: Date.now,
-    isProduction: env.NODE_ENV === "production",
+    // Preview mode only takes effect when neither database nor email is configured (see pipeline).
+    isProduction: env.NODE_ENV === "production" && !formsPreviewMode(env),
   };
 }
 

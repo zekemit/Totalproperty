@@ -25,7 +25,7 @@ function Block({ id, title, url, signInLabel }: { id: string; title: string; url
         </Button>
       ) : (
         <p className="mt-3">
-          Online sign-in isn&apos;t linked from this website yet. Call <a href={siteConfig.phoneHref} className="font-bold text-navy-700 underline">{siteConfig.phone}</a> or email <a href={`mailto:${siteConfig.email}`} className="font-bold text-navy-700 underline">{siteConfig.email}</a> and we&apos;ll help you directly.
+          To get portal access, call <a href={siteConfig.phoneHref} className="font-bold text-navy-700 underline">{siteConfig.phone}</a> or email <a href={`mailto:${siteConfig.email}`} className="font-bold text-navy-700 underline">{siteConfig.email}</a> and we&apos;ll help you directly.
         </p>
       )}
     </section>

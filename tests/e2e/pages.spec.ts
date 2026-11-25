@@ -69,13 +69,39 @@ test("security headers are present and the framework is not advertised", async (
   expect(h["x-powered-by"]).toBeUndefined();
 });
 
-test("sitemap and robots are served", async ({ request }) => {
-  const sitemap = await request.get("/sitemap.xml");
-  expect(sitemap.status()).toBe(200);
-  expect(await sitemap.text()).toContain("/owners");
+test("by default the site keeps search engines out (preview-safe), and says so three ways", async ({ request, page }) => {
   const robots = await request.get("/robots.txt");
   expect(robots.status()).toBe(200);
-  expect(await robots.text()).toContain("Sitemap:");
+  const body = await robots.text();
+  expect(body).toContain("Disallow: /");
+  expect(body).not.toContain("Sitemap:");
+  const sitemap = await request.get("/sitemap.xml");
+  expect(sitemap.status()).toBe(200);
+  expect(await sitemap.text()).not.toContain("<loc>");
+  const home = await request.get("/");
+  expect(home.headers()["x-robots-tag"]).toContain("noindex");
+  await page.goto("/");
+  await expect(page.locator('meta[name="robots"]')).toHaveAttribute("content", /noindex/);
+});
+
+test("with pending business info left blank nothing renders half-empty or overclaims", async ({ page }) => {
+  await page.goto("/about", { waitUntil: "networkidle" });
+  for (const heading of ["Leadership", "Licensing", "Properties we manage", "What clients say"]) {
+    await expect(page.getByRole("heading", { name: heading })).toHaveCount(0);
+  }
+  await page.goto("/", { waitUntil: "networkidle" });
+  await expect(page.getByRole("heading", { name: "What clients say" })).toHaveCount(0);
+  // Only a PO box is verified, so no page may claim a walk-in office.
+  for (const route of ["/", "/about", "/owners", "/lenders", "/contact"]) {
+    await page.goto(route, { waitUntil: "networkidle" });
+    expect(await page.locator("main").innerText()).not.toMatch(/our office/i);
+  }
+  // Portal links fall back to a human instruction, never a dead button.
+  await page.goto("/tenants", { waitUntil: "networkidle" });
+  await expect(page.getByRole("link", { name: /Open tenant portal/ })).toHaveCount(0);
+  await expect(page.getByText(/To get set up with your tenant portal, call/)).toBeVisible();
+  await page.goto("/portal", { waitUntil: "networkidle" });
+  await expect(page.getByText(/To get portal access, call/).first()).toBeVisible();
 });
 
 test("unknown URL shows the helpful 404 with one h1", async ({ page }) => {

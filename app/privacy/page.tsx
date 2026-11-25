@@ -15,7 +15,7 @@ export default function PrivacyPage() {
       <Section>
         <div className="prose-block max-w-3xl">
           <p>
-            This policy explains what {siteConfig.name} (&ldquo;we&rdquo;) collects through this website and how we use it. It applies to this website only.
+            This policy explains what {siteConfig.legalName} (&ldquo;we&rdquo;) collects through this website and how we use it. It applies to this website only.
           </p>
 
           <h2>What we collect</h2>
@@ -53,7 +53,7 @@ export default function PrivacyPage() {
           <p>We will post any changes to this policy on this page and update the date above.</p>
 
           <h2>Contact</h2>
-          <p>{siteConfig.name}, {siteConfig.address.poBox}, {siteConfig.address.locality}, {siteConfig.address.region} {siteConfig.address.postalCode}.</p>
+          <p>{siteConfig.legalName}, {siteConfig.mailingLine}.</p>
         </div>
       </Section>
     </>

@@ -249,11 +249,11 @@ describe("[review focus 4] partial infrastructure", () => {
     expect(res.status).toBe("error");
     expect(res.message).toContain("info@totalproperty.us");
   });
-  it("in development, with nothing configured, succeeds but says so", async () => {
+  it("in preview/development, with nothing configured, succeeds but says so", async () => {
     vi.spyOn(console, "warn").mockImplementation(() => {});
     const { deps } = makeDeps({ store: null, mailer: null, isProduction: false });
     const res = await processSubmission(deps, "rental_analysis", form(rental), ctx);
     expect(res.status).toBe("success");
-    expect(res.message).toMatch(/development/i);
+    expect(res.message).toMatch(/preview/i);
   });
 });

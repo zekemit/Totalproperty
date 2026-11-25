@@ -5,7 +5,7 @@ Marketing site and lead-conversion engine for Total Property Management (Purcell
 - **Strategy and research:** [`TOTAL_PROPERTY_AUDIT.md`](./TOTAL_PROPERTY_AUDIT.md), [`MASTER_TRANSFORMATION_PLAN.md`](./MASTER_TRANSFORMATION_PLAN.md)
 - **Implementation plan for this build:** [`docs/superpowers/plans/2026-11-25-phase1-marketing-site.md`](./docs/superpowers/plans/2026-11-25-phase1-marketing-site.md)
 
-**Scope (hybrid architecture).** This repository contains the public site, the lead pipeline and the database for inbound requests. It deliberately does **not** collect rent, hold tenant ledgers or do owner accounting; those run on a property-management platform, and the site links out to it (see [Portal and payment links](#portal-and-payment-links)). The lender/REO tracking module is a later phase.
+**Scope (hybrid architecture).** This repository contains the public site, the lead pipeline and the database for inbound requests. It deliberately does **not** collect rent, hold tenant ledgers or do owner accounting; those run on a property-management platform, and the site links out to it (see [Portal and payment links](#8-portal-and-payment-links)). The lender/REO tracking module is a later phase.
 
 ---
 
@@ -27,7 +27,7 @@ With no environment variables set, the site runs and the forms validate. In deve
 | `npm run build` / `npm start` | Production build / serve it |
 | `npm run typecheck` | `tsc --noEmit` (strict) |
 | `npm run lint` | ESLint (Next.js core-web-vitals + TypeScript rules) |
-| `npm test` | Vitest unit tests (97) |
+| `npm test` | Vitest unit tests (120) |
 | `npm run check` | typecheck + lint + unit tests |
 | `npm run test:e2e` | Playwright end-to-end + axe accessibility audit (builds and serves a fresh copy) |
 
@@ -43,9 +43,47 @@ The suite covers 13 pages at desktop and phone widths: exactly one `<h1>`, no co
 
 ---
 
-## 2. Project layout
+## 2. Business information: the one file to edit
+
+Everything the business still needs to confirm lives in **[`src/config/site.ts`](./src/config/site.ts)**, clearly commented, with every blank item marked `PENDING` and every confirmed item marked `VERIFIED`. Edit it, commit, push to `main`, and Vercel redeploys.
+
+| Section | What it controls | While blank |
+|---|---|---|
+| `company` | Name, legal name, tagline, founding year | Legal name falls back to the trade name; founding year hidden |
+| `contact` | Phone, **emergency phone**, email, hours | Emergency number falls back to the main number; hours hidden |
+| `address` | PO box, optional **street address** | Site says "We're based in Purcellville, Virginia" and shows only the mailing address. It never claims an office until a street address is entered |
+| `serviceAreas` | `featured: true/false` per jurisdiction, optional county detail | All four shown; turning one off updates every page's wording, badges and structured data |
+| `licenses` | One entry per state (number, type, holder, verify link) | Entries with a blank number are not shown |
+| `leadership` | People, titles, bios, photos | The "Leadership" section is not rendered |
+| `testimonials` | Quotes with name and detail | The "What clients say" section is not rendered |
+| `propertyPhotos` | Gallery on the About page | The "Properties we manage" section is not rendered |
+| `portals` | Owner portal, tenant portal and rent payment links | Buttons are replaced by "call or email us" instructions |
+
+Photos go in `/public/photos/` and are referenced as `/photos/name.jpg`, with the image's real pixel width and height.
+
+**Mistakes fail loudly and early.** The build validates this file and stops with a plain-English message that names the field (for example "portals.ownerUrl must start with https://" or "propertyPhotos[0]: alt text is required"), so a typo can't publish a broken site. Blank optional fields are always fine.
+
+Do not add "family-owned" or "family-backed" wording anywhere until the leadership details confirm it.
+
+---
+
+## 3. Preview deployment (before DNS cutover)
+
+The site is designed to be shown to the client on its `*.vercel.app` address **without** touching the old site:
+
+- **Search engines are blocked by default.** Until `ALLOW_INDEXING=true` is set, the site sends `X-Robots-Tag: noindex, nofollow`, a `noindex` meta tag and a `robots.txt` that disallows everything, and publishes an empty sitemap. The preview can't compete with the live site in search.
+- **Canonical URLs follow the preview address.** With `NEXT_PUBLIC_SITE_URL` unset, links and share cards use the project's Vercel address instead of totalproperty.us.
+- **Forms work for the demo.** With `FORMS_PREVIEW_MODE=true` and no database or email configured, a valid submission shows a success message labelled "Preview mode: nothing was stored or sent". Once real delivery is configured this switch does nothing.
+- **DNS is untouched.** The custom domain is not attached to the Vercel project.
+
+**At launch**, set `NEXT_PUBLIC_SITE_URL=https://totalproperty.us`, `ALLOW_INDEXING=true`, remove `FORMS_PREVIEW_MODE`, configure the delivery variables, then follow section 12.
+
+---
+
+## 4. Project layout
 
 ```
+src/config/             site.ts: ALL business information (edit this); types.ts: its shapes
 app/                    Routes (one folder per page), layout, metadata, sitemap, robots, OG image
   actions.ts            Server Actions: thin wrappers around the pipeline
 components/
@@ -53,9 +91,10 @@ components/
   forms/                FormShell + the four forms + vacancy estimator
   site/                 Header, mobile nav, footer, logo, sections, team diagram
 lib/
-  site.ts               Verified company facts, nav, pillars  ← edit facts here
+  site.ts               Derives everything from src/config/site.ts (+ validation); nav, pillars
+  env.ts, seo.ts        Deployment switches (indexing, canonical URL, preview forms); robots/sitemap
   catalog.ts            Service catalogue copy (from the company's own services page)
-  portals.ts            Portal/payment outbound links from env (server-only)
+  portals.ts            Portal/payment outbound links from the config (https only)
   calc/vacancy.ts       Vacancy arithmetic (no market data)
   forms/                schemas, security, pipeline, mailer, store, runtime
   supabase/             Admin client (server-only) and database types
@@ -65,25 +104,28 @@ tests/unit, tests/e2e   Vitest, Playwright + axe
 
 ---
 
-## 3. Environment variables
+## 5. Environment variables
 
 Copy `.env.example`. **Everything is server-only unless it starts with `NEXT_PUBLIC_`.** A build check confirms no secret name appears in any client-delivered file.
 
 | Variable | Scope | Purpose |
 |---|---|---|
-| `NEXT_PUBLIC_SITE_URL` | public | Canonical origin (sitemap, canonical URLs, OG, JSON-LD). Default `https://totalproperty.us` |
+| `NEXT_PUBLIC_SITE_URL` | public | Canonical origin (sitemap, canonical URLs, OG, JSON-LD). **Leave unset until launch** (the site then uses its own Vercel address); set to `https://totalproperty.us` at cutover |
 | `NEXT_PUBLIC_TURNSTILE_SITE_KEY` | public | Cloudflare Turnstile site key (public by design) |
 | `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` | server | Lead storage. The service role bypasses RLS; it is only read in `lib/supabase/admin.ts` (`server-only`) |
 | `RESEND_API_KEY`, `EMAIL_FROM`, `LEAD_NOTIFY_TO` | server | Staff notification email (comma-separated recipients; default `info@totalproperty.us`) |
 | `TURNSTILE_SECRET_KEY` | server | If set, every form requires a valid Turnstile token. **Set the site key too, or no one can submit.** |
 | `IP_HASH_SECRET` | server | HMAC key for hashing IPs before storage (`openssl rand -hex 32`). Unset = no IP data stored |
-| `OWNER_PORTAL_URL`, `TENANT_PORTAL_URL`, `TENANT_PAYMENT_URL` | server | Outbound https links to the PM platform. Unset = pages show contact instructions. Baked at build time: redeploy after changing |
+| `ALLOW_INDEXING` | server | `true` lets search engines in. **Default: blocked.** Set only at DNS cutover |
+| `FORMS_PREVIEW_MODE` | server | `true` makes forms show a labelled preview success when no database or email is configured. Remove at launch |
+
+Business details (licenses, leadership, testimonials, photos, portal and payment links, address, hours) are **not** environment variables; see section 2.
 
 Delivery rules (tested): a submission succeeds if **at least one** of storage or email received it; if both are configured and both fail, or neither is configured in production, the visitor sees a clear error with the phone and email.
 
 ---
 
-## 4. Database and migrations
+## 6. Database and migrations
 
 Schema: `leads` (person, consent, attribution, status), `rental_analysis` (owner requests), `contact_submissions` (contact, maintenance, vendor). Row-level security is **enabled with no policies** and all privileges are revoked from `anon`/`authenticated`: the browser can never read or write these tables; only server code using the service-role key can. CHECK constraints mirror the Zod rules.
 
@@ -115,7 +157,7 @@ select count(*) from pg_policies where schemaname = 'public';          -- 0 (den
 
 ---
 
-## 5. How a form submission is handled
+## 7. How a form submission is handled
 
 `app/actions.ts` → `lib/forms/pipeline.ts`, in this order:
 
@@ -133,13 +175,13 @@ Notes:
 
 ---
 
-## 6. Portal and payment links
+## 8. Portal and payment links
 
-Rent collection and tenant/owner accounting are **not** built here. Set the three env vars to the platform's login/payment URLs when it is live. `/tenants`, `/portal` and the header link to them (new tab, announced to screen readers). Until set, those pages say so and show the phone and email.
+Rent collection and tenant/owner accounting are **not** built here. Put the platform's login and rent-payment URLs in the `portals` section of `src/config/site.ts` when it is live. `/tenants`, `/portal` and the header link to them (new tab, announced to screen readers). Until set, those pages show a "call or email us" instruction instead of a button.
 
 ---
 
-## 7. Design tokens and contrast
+## 9. Design tokens and contrast
 
 Tokens live in `app/globals.css` (`@theme`). Tailwind v4 is CSS-first, so there is no `tailwind.config.ts`. Computed WCAG ratios:
 
@@ -159,12 +201,12 @@ Fonts (Manrope for headings and UI, Source Serif 4 for ledes and quotes) are sel
 
 ---
 
-## 8. Quality and security results (this build)
+## 10. Quality and security results (this build)
 
 | Check | Result |
 |---|---|
-| Unit tests | 97 passing |
-| Playwright e2e | 94 passing, 6 skipped by design (form submissions run on desktop only to stay inside the rate limit) |
+| Unit tests | 120 passing |
+| Playwright e2e | 96 passing, 6 skipped by design (form submissions run on desktop only to stay inside the rate limit) |
 | axe, WCAG 2.0–2.2 A/AA | 0 violations on every page, desktop and phone |
 | Lighthouse, mobile (simulated slow 4G) | Performance: Home 96 · Owners 97 · Tenants 98 · Contact 95. **Accessibility, Best Practices, SEO: 100 on every page tested** |
 | Lighthouse, desktop (home) | 100 / 100 / 100 / 100 |
@@ -177,21 +219,21 @@ Security headers (every route): CSP (`frame-ancestors 'none'`, `object-src 'none
 
 ---
 
-## 9. Deployment checklist (Vercel + GitHub)
+## 11. Deployment checklist (Vercel + GitHub)
 
 1. **Import** the GitHub repository in Vercel (framework: Next.js; defaults are correct).
-2. **Set environment variables** (Production and Preview) per section 3. At minimum: `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `RESEND_API_KEY`, `EMAIL_FROM`, `LEAD_NOTIFY_TO`, `IP_HASH_SECRET`, and both Turnstile keys.
-3. **Supabase:** create the project, apply the migration, run the verification SQL (section 4).
+2. **Set environment variables** (Production and Preview) per section 5. At minimum: `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `RESEND_API_KEY`, `EMAIL_FROM`, `LEAD_NOTIFY_TO`, `IP_HASH_SECRET`, and both Turnstile keys.
+3. **Supabase:** create the project, apply the migration, run the verification SQL (section 6).
 4. **Resend:** verify the sending domain. Resend gives you DNS records to add. Add them as **new records only**; do not edit or replace the existing Microsoft 365 SPF record. If Resend asks for an SPF change on the root domain, merge it into the single existing SPF record instead of adding a second one.
 5. **Turnstile:** create a widget for `totalproperty.us` and set both keys.
-6. **Firewall:** add the `POST` rate-limit rule (section 5).
+6. **Firewall:** add the `POST` rate-limit rule (section 7).
 7. **Deploy to the preview URL** and run: a test submission of each form (confirm the database row and the email), a keyboard-only pass, a phone check.
-8. **Cut over DNS** only after sign-off (section 10).
+8. **Cut over DNS** only after sign-off (section 12).
 9. **After launch:** add and verify the domain in Google Search Console, submit `/sitemap.xml`, enable Vercel Web Analytics and Speed Insights, and claim the Google Business Profile.
 
 ---
 
-## 10. DNS cutover (A and CNAME only)
+## 12. DNS cutover (A and CNAME only)
 
 > **The legacy site is not on Wix.** `totalproperty.us` currently resolves to a managed VPS (`209.142.64.131`, Apache + PHP), and the nameservers are that provider's (`ns1/ns2.cloud-6d7e86.managed-vps.net`). **Email runs on Microsoft 365**, and DNS and web hosting are at the same provider. Changing nameservers, or deleting records wholesale, would break company email.
 
@@ -226,25 +268,25 @@ Before touching anything: export a full copy of the current zone (every record) 
 
 ---
 
-## 11. Launch blockers (need client input)
+## 13. Launch blockers (need client input)
 
-The site is built so **nothing unverified is claimed**. These fields are empty until the client confirms them, and the pages render those sections only when they are filled (`lib/site.ts`):
+The site is built so **nothing unverified is claimed**. These fields are blank until the client confirms them, and the pages render those sections only when they are filled. **All of them are in `src/config/site.ts`** (section 2):
 
 | Item | Where | Why it matters |
 |---|---|---|
-| License numbers and verification links | `siteConfig.licenses` | Virginia and DC generally require licensing for managing others' property; Maryland and Pennsylvania should be confirmed with the regulators |
-| Leadership names, titles | `siteConfig.leadership` | About page; the "family-backed" claim stays out until confirmed |
-| Founding year | `siteConfig.foundedYear` | Footer copyright suggests 2009 but that is unconfirmed |
+| License numbers and verification links | `licenses` | Virginia and DC generally require licensing for managing others' property; Maryland and Pennsylvania should be confirmed with the regulators |
+| Leadership names, titles, photos | `leadership` | About page; the "family-backed" claim stays out until confirmed |
+| Founding year, legal entity name | `company.foundedYear`, `company.legalName` | Footer copyright suggests 2009 but that is unconfirmed |
 | Counsel review | `/privacy`, `/accessibility`, `/fair-housing` | Drafted from standard practice, not legal advice |
 | Official Equal Housing Opportunity logo | footer | Text statement used until the asset is supplied |
 | Vector logo | `components/site/logo.tsx`, `app/icon.svg` | Interim mark redrawn from the legacy glyph; commission the final artwork |
-| Photos of managed properties, team, testimonials | not yet used | No stock imagery is used |
-| Service-area detail and Google Business Profile | outside the repo | A PO box is not eligible for a map listing; decide street address or service-area business |
-| PM platform URLs | env vars | Enables portal and rent-payment links |
+| Property photos, testimonials | `propertyPhotos`, `testimonials` | No stock imagery is used |
+| Street address (or confirmation there is none), hours, emergency line | `address.street`, `contact.hours`, `contact.emergencyPhone` | A PO box is not eligible for a Google Business Profile map listing; decide street address or service-area business |
+| PM platform URLs | `portals` | Enables the portal and rent-payment buttons |
 
 ---
 
-## 12. Decisions and deviations from the brief
+## 14. Decisions and deviations from the brief
 
 | Brief said | What I did | Why |
 |---|---|---|
@@ -255,7 +297,9 @@ The site is built so **nothing unverified is claimed**. These fields are empty u
 | Wix/DNS cutover table | Table is for the real legacy host (managed VPS) | Verified by DNS lookup; the site is not on Wix |
 | "Free Rental Analysis interactive calculator" | An intake form plus a **vacancy calculator** that only does arithmetic on the visitor's own numbers | Public rent data for Loudoun conflicted by about 40% across sources, so a market-rent estimate would be a made-up number. A real estimator needs a licensed data source (a later phase) |
 | "Professional company history" on About | About uses the company's own published copy; no history is invented | Nothing verifiable beyond the live site; founding year and leadership appear once supplied |
-| "Online payment gateway placeholders" | Env-driven outbound links; honest fallback text when unset | The plan excludes custom rent collection |
+| "Online payment gateway placeholders" | Outbound links set in `src/config/site.ts`; call-or-email fallback text when blank | The plan excludes custom rent collection |
+| Centralize pending info in `src/config/site.ts` | Done. `src/` holds only `config/`; the rest stays at the repo root, reached through the `@config/*` import alias | Moving the whole project under `src/` would churn every import for no benefit. Portal links moved from env vars into this file so there is one place to edit |
+| (My own earlier copy) "Our office is in Purcellville" | Removed. The site says "We're based in Purcellville" until a street address is entered | Only a PO box is verified; the site must not imply a walk-in office |
 | Pages listed | Also built `/services`, `/commercial`, `/lenders`, `/portal`, `/privacy`, `/accessibility`, `/fair-housing` | The homepage's four pillars and the forms' consent text need real destinations; housing sites need a fair-housing statement |
 | `leads`, `rental_analysis`, contact submissions tables | Done, plus attribution columns and kind-specific constraints | Maintenance and vendor requests share `contact_submissions` |
 

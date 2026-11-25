@@ -8,8 +8,7 @@ import { siteConfig } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "Rental property management for owners",
-  description:
-    "Free rental analysis and full-service residential property management for owners in Virginia, Maryland, Pennsylvania and DC. We step into your shoes, from roof repair to landscaping.",
+  description: `Free rental analysis and full-service residential property management for owners in ${siteConfig.areasPhrase}. We step into your shoes, from roof repair to landscaping.`,
   alternates: { canonical: "/owners" },
 };
 
@@ -23,7 +22,7 @@ const steps = [
 
 const faqs = [
   { q: "Do I have to hire you for everything?", a: "No. We tailor our service to your specific requirements and budget, and you can choose one service or all of them." },
-  { q: "Which areas do you serve?", a: "Virginia, Maryland, Pennsylvania and the DC area. Our office is in Purcellville, Virginia." },
+  { q: "Which areas do you serve?", a: `${siteConfig.areasPhrase}. ${siteConfig.basedInSentence}` },
   { q: "What does the rental analysis cost?", a: "Nothing. It's free, and requesting one doesn't commit you to anything." },
   { q: "What happens to the information I send?", a: "We use it to prepare your analysis and to contact you about it. We don't sell it. The privacy policy explains the details." },
 ] as const;

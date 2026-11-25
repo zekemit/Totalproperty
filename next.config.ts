@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
 
 const isDev = process.env.NODE_ENV !== "production";
+const allowIndexing = process.env.ALLOW_INDEXING?.trim().toLowerCase() === "true";
 
 /**
  * Content-Security-Policy.
@@ -37,6 +38,8 @@ const securityHeaders = [
   // No `preload`: joining the browser preload list is a one-way door; decide it deliberately later.
   { key: "Strict-Transport-Security", value: "max-age=31536000; includeSubDomains" },
   { key: "Cross-Origin-Opener-Policy", value: "same-origin" },
+  // Belt and braces with robots.txt and the meta tag: also covers images and files.
+  ...(allowIndexing ? [] : [{ key: "X-Robots-Tag", value: "noindex, nofollow" }]),
 ];
 
 const nextConfig: NextConfig = {

@@ -1,6 +1,8 @@
-import "server-only";
+import { siteConfig } from "./site";
 
 export type PortalUrls = { owner?: string; tenant?: string; payment?: string };
+
+type Source = { owner?: string; tenant?: string; payment?: string };
 
 function httpsOnly(value: string | undefined): string | undefined {
   const raw = value?.trim();
@@ -14,16 +16,15 @@ function httpsOnly(value: string | undefined): string | undefined {
 }
 
 /**
- * Outbound links to the property-management platform (owner login, tenant login,
- * rent payment). Read on the server only; unset or non-https values are dropped
- * so pages fall back to contact instructions instead of rendering a dead or
- * unsafe link. Values are baked in at build time: change them, then redeploy.
+ * Outbound links to the property-management platform (owner login, tenant login, rent
+ * payment), taken from `portals` in src/config/site.ts. Blank or non-https values are
+ * dropped so pages fall back to contact instructions instead of a dead or unsafe link.
  */
-export function portalUrls(env: Record<string, string | undefined> = process.env): PortalUrls {
+export function portalUrls(source: Source = siteConfig.portals): PortalUrls {
   const out: PortalUrls = {};
-  const owner = httpsOnly(env.OWNER_PORTAL_URL);
-  const tenant = httpsOnly(env.TENANT_PORTAL_URL);
-  const payment = httpsOnly(env.TENANT_PAYMENT_URL);
+  const owner = httpsOnly(source.owner);
+  const tenant = httpsOnly(source.tenant);
+  const payment = httpsOnly(source.payment);
   if (owner) out.owner = owner;
   if (tenant) out.tenant = tenant;
   if (payment) out.payment = payment;

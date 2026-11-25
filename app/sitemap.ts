@@ -1,5 +1,7 @@
 import type { MetadataRoute } from "next";
-import { absoluteUrl } from "@/lib/site";
+import { indexingAllowed } from "@/lib/env";
+import { buildSitemap } from "@/lib/seo";
+import { siteConfig } from "@/lib/site";
 
 const routes: { path: string; priority: number }[] = [
   { path: "/", priority: 1 },
@@ -18,5 +20,5 @@ const routes: { path: string; priority: number }[] = [
 ];
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  return routes.map((r) => ({ url: absoluteUrl(r.path), changeFrequency: "monthly", priority: r.priority }));
+  return buildSitemap(indexingAllowed(), siteConfig.url, routes);
 }

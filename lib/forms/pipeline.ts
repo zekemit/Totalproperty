@@ -51,7 +51,7 @@ const MESSAGES = {
   vendor: "Thank you. We received your information and will follow up with next steps.",
 } satisfies Record<FormKind, string>;
 
-const EMERGENCY_NOTE = ` Because you marked this an emergency, please also call us right now at ${siteConfig.phone}.`;
+const EMERGENCY_NOTE = ` Because you marked this an emergency, please also call us right now at ${siteConfig.emergencyPhone}.`;
 const CONTACT_FALLBACK = `Please call ${siteConfig.phone} or email ${siteConfig.email} and we'll take care of it.`;
 
 function success(kind: FormKind, emergency = false): FormState {
@@ -343,7 +343,7 @@ export async function processSubmission(
     console.warn("[lead] no database or email configured; submission validated but not delivered", { kind });
     return {
       status: "success",
-      message: `${MESSAGES[kind]} (Development mode: no database or email is configured, so nothing was stored or sent.)`,
+      message: `${MESSAGES[kind]} (Preview mode: this site isn't connected to a database or email yet, so nothing was stored or sent.)`,
     };
   }
 

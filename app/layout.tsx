@@ -5,6 +5,7 @@ import { AttributionCapture } from "@/components/forms/attribution";
 import { Footer } from "@/components/site/footer";
 import { Header } from "@/components/site/header";
 import { JsonLd } from "@/components/site/json-ld";
+import { indexingAllowed } from "@/lib/env";
 import { serviceAreas, siteConfig } from "@/lib/site";
 
 /**
@@ -32,7 +33,7 @@ const sourceSerif = localFont({
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteConfig.url),
-  title: { default: `${siteConfig.name} | Virginia, Maryland, Pennsylvania & DC`, template: `%s | ${siteConfig.name}` },
+  title: { default: `${siteConfig.name} | ${siteConfig.areasPhraseAmp}`, template: `%s | ${siteConfig.name}` },
   description: siteConfig.description,
   applicationName: siteConfig.name,
   alternates: { canonical: "/" },
@@ -45,7 +46,9 @@ export const metadata: Metadata = {
     locale: "en_US",
   },
   twitter: { card: "summary_large_image", title: siteConfig.name, description: siteConfig.description },
-  robots: { index: true, follow: true },
+  // Off by default so a preview or staging copy never competes with the live site in
+  // search. Set ALLOW_INDEXING=true when DNS is cut over (see README).
+  robots: indexingAllowed() ? { index: true, follow: true } : { index: false, follow: false },
 };
 
 export const viewport: Viewport = { themeColor: "#12263f", width: "device-width", initialScale: 1 };
@@ -56,11 +59,14 @@ const organization = {
   name: siteConfig.name,
   url: siteConfig.url,
   description: siteConfig.description,
-  telephone: "+1-202-528-0140",
+  telephone: siteConfig.phoneHref.replace("tel:", ""),
   email: siteConfig.email,
+  ...(siteConfig.legalName !== siteConfig.name ? { legalName: siteConfig.legalName } : {}),
+  ...(siteConfig.foundedYear ? { foundingDate: String(siteConfig.foundedYear) } : {}),
   address: {
     "@type": "PostalAddress",
     postOfficeBoxNumber: siteConfig.address.poBox,
+    ...(siteConfig.address.street ? { streetAddress: siteConfig.address.street } : {}),
     addressLocality: siteConfig.address.locality,
     addressRegion: siteConfig.address.region,
     postalCode: siteConfig.address.postalCode,

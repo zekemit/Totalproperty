@@ -1,18 +1,16 @@
 import type { Metadata } from "next";
-import { Mail, MapPin, Phone } from "lucide-react";
+import { Clock, Mail, MapPin, Phone } from "lucide-react";
 import { ContactForm } from "@/components/forms/contact-form";
 import { PageHero, Section } from "@/components/site/sections";
 import { siteConfig } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "Contact Total Property Management",
-  description:
-    "Contact Total Property Management in Purcellville, VA by phone, email or secure form. Serving Virginia, Maryland, Pennsylvania and DC.",
+  description: `Contact Total Property Management in ${siteConfig.place} by phone, email or secure form. Serving ${siteConfig.areasPhrase}.`,
   alternates: { canonical: "/contact" },
 };
 
 export default function ContactPage() {
-  const { address } = siteConfig;
   return (
     <>
       <PageHero title="Talk to Total Property." lede="Call, email, or send a message. Tell us what you need and we'll point you to the right person." />
@@ -39,17 +37,31 @@ export default function ContactPage() {
               <li className="flex gap-4">
                 <MapPin aria-hidden="true" className="mt-1 size-6 shrink-0 text-copper" />
                 <address className="not-italic">
-                  <p className="font-bold text-navy-800">Mailing address</p>
-                  {siteConfig.name}
+                  {siteConfig.officeLine ? (
+                    <>
+                      <p className="font-bold text-navy-800">Office</p>
+                      {siteConfig.officeLine}
+                      <br />
+                    </>
+                  ) : null}
+                  <p className={siteConfig.officeLine ? "mt-3 font-bold text-navy-800" : "font-bold text-navy-800"}>Mailing address</p>
+                  {siteConfig.legalName}
                   <br />
-                  {address.poBox}
-                  <br />
-                  {address.locality}, {address.region} {address.postalCode}
+                  {siteConfig.mailingLine}
                 </address>
               </li>
+              {siteConfig.hours ? (
+                <li className="flex gap-4">
+                  <Clock aria-hidden="true" className="mt-1 size-6 shrink-0 text-copper" />
+                  <div>
+                    <p className="font-bold text-navy-800">Hours</p>
+                    {siteConfig.hours}
+                  </div>
+                </li>
+              ) : null}
             </ul>
             <p className="mt-8 rounded-lg bg-alabaster-2 p-4">
-              <strong className="text-navy-800">Tenant with an emergency?</strong> Call {siteConfig.phone}. For a routine repair use the <a href="/tenants#maintenance" className="font-bold text-navy-700 underline">maintenance request form</a>.
+              <strong className="text-navy-800">Tenant with an emergency?</strong> Call {siteConfig.emergencyPhone}. For a routine repair use the <a href="/tenants#maintenance" className="font-bold text-navy-700 underline">maintenance request form</a>.
             </p>
           </div>
           <div className="rounded-xl border border-line bg-white p-6 shadow-card sm:p-8 lg:col-span-8">

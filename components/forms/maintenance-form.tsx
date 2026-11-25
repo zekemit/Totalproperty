@@ -32,7 +32,7 @@ export function MaintenanceForm() {
             placeholder="Choose one"
           />
           <CheckboxField id={h.id("emergency")} name="emergency" defaultChecked={h.value("emergency") === "on"}>
-            <strong>This is an emergency</strong> (active flooding, no heat in freezing weather, gas smell, fire, or a safety risk). After you send this, call {siteConfig.phone} right away.
+            <strong>This is an emergency</strong> (active flooding, no heat in freezing weather, gas smell, fire, or a safety risk). After you send this, call {siteConfig.emergencyPhone} right away.
           </CheckboxField>
           <ConsentField h={h} />
         </>

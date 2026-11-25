@@ -14,7 +14,7 @@ export const metadata: Metadata = {
 };
 
 const steps = [
-  { title: "Is it an emergency?", text: `If anyone is in danger, call 911 first. For an emergency at your home, such as active flooding, no heat in freezing weather, a gas smell or a fire, call us right away at ${siteConfig.phone}.` },
+  { title: "Is it an emergency?", text: `If anyone is in danger, call 911 first. For an emergency at your home, such as active flooding, no heat in freezing weather, a gas smell or a fire, call us right away at ${siteConfig.emergencyPhone}.` },
   { title: "Not an emergency? Send a request.", text: "Use the form below. Tell us what's wrong, where it is, and how to reach you." },
   { title: "We follow up.", text: "Our team reviews your request and contacts you about next steps." },
 ] as const;
@@ -49,7 +49,7 @@ export default function TenantsPage() {
                 <ExternalButton href={tenant}>Open tenant portal</ExternalButton>
               </>
             ) : (
-              <p className="mt-2">Portal access isn&apos;t linked from this website yet. Call <a href={siteConfig.phoneHref} className="font-bold text-navy-700 underline">{siteConfig.phone}</a> or email <a href={`mailto:${siteConfig.email}`} className="font-bold text-navy-700 underline">{siteConfig.email}</a> and we&apos;ll point you to the right place.</p>
+              <p className="mt-2">To get set up with your tenant portal, call <a href={siteConfig.phoneHref} className="font-bold text-navy-700 underline">{siteConfig.phone}</a> or email <a href={`mailto:${siteConfig.email}`} className="font-bold text-navy-700 underline">{siteConfig.email}</a> and we&apos;ll help you directly.</p>
             )}
           </div>
           <div className="rounded-xl border border-line bg-white p-6">
@@ -60,7 +60,7 @@ export default function TenantsPage() {
                 <ExternalButton href={payment} variant="outline">Pay rent online</ExternalButton>
               </>
             ) : (
-              <p className="mt-2">Online payment isn&apos;t available on this website yet. Call <a href={siteConfig.phoneHref} className="font-bold text-navy-700 underline">{siteConfig.phone}</a> for current payment instructions.</p>
+              <p className="mt-2">To pay rent, call <a href={siteConfig.phoneHref} className="font-bold text-navy-700 underline">{siteConfig.phone}</a> for current payment instructions.</p>
             )}
           </div>
         </div>
@@ -81,9 +81,9 @@ export default function TenantsPage() {
         <div className="grid gap-10 lg:grid-cols-12">
           <div className="lg:col-span-4">
             <h3 className="text-2xl">Maintenance request</h3>
-            <a href={siteConfig.phoneHref} className="mt-4 inline-flex min-h-11 items-center gap-2 font-bold text-navy-700 underline underline-offset-4">
+            <a href={siteConfig.emergencyPhoneHref} className="mt-4 inline-flex min-h-11 items-center gap-2 font-bold text-navy-700 underline underline-offset-4">
               <Phone aria-hidden="true" className="size-5" />
-              Emergency? Call {siteConfig.phone}
+              Emergency? Call {siteConfig.emergencyPhone}
             </a>
           </div>
           <div className="rounded-xl border border-line bg-white p-6 shadow-card sm:p-8 lg:col-span-8">

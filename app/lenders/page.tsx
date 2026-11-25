@@ -32,7 +32,7 @@ export default function LendersPage() {
           </div>
           <aside className="self-start rounded-xl border border-line bg-white p-6 lg:col-span-4 lg:col-start-9">
             <h3 className="text-xl">Where we work</h3>
-            <p className="mt-2">Virginia, Maryland, Pennsylvania and the DC area, from our office in Purcellville, Virginia.</p>
+            <p className="mt-2">{siteConfig.areasPhrase}. {siteConfig.basedInSentence}</p>
           </aside>
         </div>
       </Section>

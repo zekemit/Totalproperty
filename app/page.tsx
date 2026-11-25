@@ -4,12 +4,12 @@ import { Building2, ChevronRight, HardHat, House, Landmark, MapPin } from "lucid
 import { Button } from "@/components/ui/button";
 import { Section, SectionHeading } from "@/components/site/sections";
 import { TeamDiagram } from "@/components/site/team-diagram";
+import { Testimonials } from "@/components/site/testimonials";
 import { pillars, serviceAreas, siteConfig, type Pillar } from "@/lib/site";
 
 export const metadata: Metadata = {
-  title: { absolute: `${siteConfig.name} | Virginia, Maryland, Pennsylvania & DC` },
-  description:
-    "Residential, commercial, construction and lender-side property management across Virginia, Maryland, Pennsylvania and DC. One accountable team based in Purcellville, VA.",
+  title: { absolute: `${siteConfig.name} | ${siteConfig.areasPhraseAmp}` },
+  description: `Residential, commercial, construction and lender-side property management across ${siteConfig.areasPhrase}. One accountable team based in ${siteConfig.place}.`,
   alternates: { canonical: "/" },
 };
 
@@ -28,9 +28,9 @@ const pillarIcons: Record<Pillar["id"], typeof House> = {
 };
 
 export default function HomePage() {
-  const badges: string[] = [`Based in ${siteConfig.address.locality}, ${siteConfig.address.region}`];
+  const badges: string[] = [`Based in ${siteConfig.place}`];
   if (siteConfig.foundedYear) badges.push(`Serving clients since ${siteConfig.foundedYear}`);
-  for (const l of siteConfig.licenses) badges.push(`${l.jurisdiction} license ${l.number}`);
+  for (const l of siteConfig.licenses) badges.push(l.label);
 
   return (
     <>
@@ -41,7 +41,7 @@ export default function HomePage() {
               Property management that fights for your&nbsp;asset.
             </h1>
             <p className="mt-6 max-w-xl font-serif text-xl leading-relaxed text-muted sm:text-[1.375rem]">
-              Residential, commercial, construction and lender-side management across Virginia, Maryland, Pennsylvania and DC, handled by one accountable team.
+              Residential, commercial, construction and lender-side management across {siteConfig.areasPhrase}, handled by one accountable team.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Button asChild size="lg" variant="accent">
@@ -101,11 +101,13 @@ export default function HomePage() {
         </ul>
       </Section>
 
-      <Section tone="panel" labelledBy="coverage" className="!py-12">
+      <Testimonials />
+
+      <Section tone={siteConfig.testimonials.length > 0 ? "default" : "panel"} labelledBy="coverage" className="!py-12">
         <div className="grid gap-8 lg:grid-cols-12 lg:items-center">
           <div className="lg:col-span-4">
             <h2 id="coverage" className="text-2xl">Where we work</h2>
-            <p className="mt-2 text-muted">Our office is in Purcellville, in Loudoun County, Virginia.</p>
+            <p className="mt-2 text-muted">{siteConfig.basedInSentence}{siteConfig.serviceAreaDetail ? ` ${siteConfig.serviceAreaDetail}.` : ""}</p>
           </div>
           <ul className="flex flex-wrap gap-3 lg:col-span-8">
             {serviceAreas.map((a) => (

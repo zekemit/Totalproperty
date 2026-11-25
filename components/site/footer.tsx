@@ -4,19 +4,25 @@ import { navLinks, serviceAreas, siteConfig } from "@/lib/site";
 import { Logo } from "./logo";
 
 export function Footer() {
-  const { address } = siteConfig;
   return (
     <footer className="on-dark bg-navy-900 text-muted-on-dark">
       <div className="container-page grid gap-10 py-14 md:grid-cols-12">
         <div className="md:col-span-5">
           <Logo tone="dark" />
           <p className="mt-5 max-w-sm">
-            One accountable team for owners, commercial landlords, tenants and lenders in Virginia, Maryland, Pennsylvania and the DC area.
+            One accountable team for owners, commercial landlords, tenants and lenders in {siteConfig.areasPhrase}.
           </p>
           <address className="mt-5 not-italic">
-            {siteConfig.name}
+            {siteConfig.legalName}
             <br />
-            {address.poBox}, {address.locality}, {address.region} {address.postalCode}
+            {siteConfig.officeLine ? (
+              <>
+                Office: {siteConfig.officeLine}
+                <br />
+                Mail:{" "}
+              </>
+            ) : null}
+            {siteConfig.mailingLine}
           </address>
           <p className="mt-3">
             <a href={siteConfig.phoneHref} className="font-bold text-white underline underline-offset-4">{siteConfig.phone}</a>
@@ -43,18 +49,19 @@ export function Footer() {
               <li key={a.code} className="rounded-md border border-white/30 px-3 py-1.5 text-white">{a.name}</li>
             ))}
           </ul>
+          {siteConfig.serviceAreaDetail ? <p className="mt-3">{siteConfig.serviceAreaDetail}</p> : null}
           {siteConfig.licenses.length > 0 ? (
             <div className="mt-6">
               <h2 className="text-base font-extrabold text-white">Licensing</h2>
               <ul className="mt-3 space-y-1.5">
                 {siteConfig.licenses.map((l) => (
-                  <li key={`${l.jurisdiction}-${l.number}`}>
+                  <li key={`${l.state}-${l.number}`}>
                     {l.verifyUrl ? (
                       <a href={l.verifyUrl} target="_blank" rel="noopener noreferrer" className="underline underline-offset-4 hover:text-white">
-                        {l.jurisdiction} license {l.number}<span className="sr-only"> (opens in a new tab)</span>
+                        {l.label}<span className="sr-only"> (opens in a new tab)</span>
                       </a>
                     ) : (
-                      <>{l.jurisdiction} license {l.number}</>
+                      <>{l.label}</>
                     )}
                   </li>
                 ))}
@@ -68,7 +75,7 @@ export function Footer() {
         <div className="container-page flex flex-col gap-3 py-6 text-sm sm:flex-row sm:items-center sm:justify-between">
           <p className="flex items-center gap-2">
             <House aria-hidden="true" className="size-5 shrink-0 text-gold" />
-            <span>Equal Housing Opportunity. © {new Date().getFullYear()} {siteConfig.name}.</span>
+            <span>Equal Housing Opportunity. © {new Date().getFullYear()} {siteConfig.legalName}.</span>
           </p>
           <ul className="flex flex-wrap gap-x-5 gap-y-2">
             <li><Link href="/privacy" className="underline-offset-4 hover:text-white hover:underline">Privacy</Link></li>

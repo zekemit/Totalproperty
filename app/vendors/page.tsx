@@ -5,8 +5,7 @@ import { siteConfig } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "Vendors and contractors",
-  description:
-    "Contractors and service providers: tell Total Property Management about your trade and service area to work on the properties we manage in Virginia, Maryland, Pennsylvania and DC.",
+  description: `Contractors and service providers: tell Total Property Management about your trade and service area to work on the properties we manage in ${siteConfig.areasPhrase}.`,
   alternates: { canonical: "/vendors" },
 };
 
