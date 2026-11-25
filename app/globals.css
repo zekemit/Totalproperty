@@ -1,0 +1,149 @@
+@import "tailwindcss";
+
+/*
+ * Design tokens — Total Property Management
+ * Every text/background pair below was contrast-checked against WCAG 2.2 AA
+ * (see README → "Design tokens & contrast"). Do not introduce new text colours
+ * without re-running the check.
+ */
+@theme {
+  /* Surfaces */
+  --color-alabaster: #f7f6f1;
+  --color-alabaster-2: #efede5;
+  --color-white: #ffffff;
+  --color-line: #d9d6cb;
+
+  /* Harbor Navy — headings, primary actions, dark sections */
+  --color-navy-900: #0b1a2e;
+  --color-navy-800: #12263f;
+  --color-navy-700: #1d3a5f;
+  --color-navy-600: #2a4d7a;
+
+  /* Neutral text */
+  --color-ink: #23272e;
+  --color-muted: #4f5762;
+  --color-muted-on-dark: #b7c2d0;
+  --color-field-border: #6f757d;
+
+  /* Accent — accessible copper-amber (5.10:1 on alabaster) and gold for fills on navy */
+  --color-copper: #8f5f00;
+  --color-gold: #e2b35a;
+  --color-gold-hover: #ecc277;
+
+  /* Status */
+  --color-danger: #a3281f;
+  --color-success: #1f6b3f;
+
+  /* Type */
+  --font-sans: "Manrope Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-serif: "Source Serif 4 Variable", ui-serif, Georgia, "Times New Roman", serif;
+
+  --radius-card: 0.75rem;
+  --shadow-card: 0 1px 2px rgb(11 26 46 / 0.06), 0 8px 24px -12px rgb(11 26 46 / 0.18);
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+  body {
+    background-color: var(--color-alabaster);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    font-size: 1.0625rem;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  h1,
+  h2,
+  h3,
+  h4 {
+    color: var(--color-navy-800);
+    font-weight: 800;
+    letter-spacing: -0.015em;
+    line-height: 1.12;
+    text-wrap: balance;
+  }
+  h1 {
+    font-size: clamp(2.25rem, 1.6rem + 3vw, 3.75rem);
+  }
+  h2 {
+    font-size: clamp(1.75rem, 1.35rem + 1.6vw, 2.5rem);
+  }
+  h3 {
+    font-size: 1.25rem;
+    line-height: 1.25;
+  }
+  p {
+    text-wrap: pretty;
+  }
+  a {
+    text-underline-offset: 0.18em;
+  }
+  /* One consistent, high-contrast focus indicator (WCAG 2.4.7 / 2.4.11). */
+  :focus-visible {
+    outline: 3px solid var(--color-navy-700);
+    outline-offset: 3px;
+    border-radius: 2px;
+  }
+  .on-dark :focus-visible {
+    outline-color: var(--color-gold);
+  }
+  ::selection {
+    background: var(--color-gold);
+    color: var(--color-navy-900);
+  }
+}
+
+@layer components {
+  /* Reusable width container with a 16px minimum gutter on phones. */
+  .container-page {
+    margin-inline: auto;
+    width: 100%;
+    max-width: 72rem;
+    padding-inline: clamp(1rem, 4vw, 2rem);
+  }
+  .eyebrow {
+    color: var(--color-copper);
+    font-size: 0.8125rem;
+    font-weight: 800;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+  .on-dark .eyebrow {
+    color: var(--color-gold);
+  }
+  .prose-block > * + * {
+    margin-top: 1rem;
+  }
+  .prose-block ul {
+    list-style: disc;
+    padding-left: 1.25rem;
+  }
+  .prose-block ul > li + li {
+    margin-top: 0.4rem;
+  }
+  .prose-block a {
+    color: var(--color-navy-700);
+    font-weight: 700;
+    text-decoration: underline;
+  }
+  .prose-block h2 {
+    margin-top: 2.25rem;
+    font-size: 1.5rem;
+  }
+}
